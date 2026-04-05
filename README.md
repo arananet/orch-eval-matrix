@@ -47,8 +47,6 @@ The CNF-* and CND-* scenarios specifically test whether the orchestrator correct
 - Conflict detection & escalation
 - Tool → tool coordination chains
 
-**Developer:** [Eduardo Arana](https://github.com/arananet)
-
 ---
 
 ## Background & Lineage
@@ -85,7 +83,7 @@ This framework evaluates **complex orchestration patterns**: how an orchestrator
 
 **Out of scope:** Protocol compliance testing (MCP, A2A, REST API, gRPC). Those are communication layer concerns. This matrix assumes your system can call tools and agents — it evaluates whether the *decisions* about what to call, when, and with what context are correct.
 
-Whether you're building on LangGraph, AutoGen/Magentic-One, CrewAI, Semantic Kernel, DSPy, Haystack, Agno, or a fully custom orchestration layer, this matrix gives you a consistent, reproducible score across 6 critical enterprise capability dimensions.
+Whether you're building on LangGraph, CrewAI, Semantic Kernel, Microsoft Agent Framework, BeeAI, DSPy, Haystack, Agno, or a fully custom orchestration layer, this matrix gives you a consistent, reproducible score across 6 critical enterprise capability dimensions.
 
 **Who it's for:**
 - Platform teams building shared orchestration infrastructure
@@ -384,3 +382,7 @@ MIT License. See LICENSE for details.
 ---
 
 *orch-eval-matrix — Built for engineers who need to know their orchestrator works before it touches production.*
+
+---
+
+**Developer:** [Eduardo Arana](https://github.com/arananet)
