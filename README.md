@@ -21,9 +21,39 @@
 
 ---
 
+## Background & Lineage
+
+This framework emerged from hands-on experience building enterprise orchestration systems from the ground up. Two prior projects shaped its design directly:
+
+### [octo-agent](https://github.com/arananet/octo-agent)
+
+A decentralized multi-agent orchestration framework inspired by cephalopod biology — the idea that intelligence distributed without losing coherence is more resilient than a single central brain. Octo-agent introduced the **Blackboard Architecture**: a shared, asynchronous state store that acts as the single source of truth across agents. A Strategic Core LLM handles high-level reasoning and conflict resolution; Specialized Arms (smaller, domain-specific models) execute logistics, finance, legal, and other tasks independently. Guardrails are enforced at the infrastructure layer, not the prompt layer.
+
+Key lessons that shaped this evaluation matrix:
+- "Central Brain Syndrome" is a real failure mode in enterprise AI — a single bottleneck LLM that owns all decisions doesn't scale and creates brittle systems
+- Asynchronous blackboard collaboration exposes context-preservation gaps that synchronous chains hide — exactly what the MTX-* scenarios test
+- Guardrail bypass at the prompt level is catastrophic — the critical failure override system in `scoring/thresholds.json` is a direct response to this
+
+### [edgeneuro](https://github.com/arananet/edgeneuro)
+
+An intelligent routing system combining LLMs with symbolic knowledge graphs to orchestrate distributed agent networks. EdgeNeuro introduced the **"Hot Potato" pattern**: the router classifies intent in <50ms at the edge and immediately hands off to a specialized agent, then exits — it never becomes a persistent proxy or bottleneck. A Neuro-Symbolic engine layers a Knowledge Graph (for fast symbolic matching and access control) with an LLM (invoked only when symbolic confidence < 0.5). Security follows **Default Deny**: if no explicit path exists in the knowledge graph, access is physically blocked.
+
+Key lessons that shaped this evaluation matrix:
+- Sub-50ms edge routing means intent detection accuracy is the critical variable — poor decomposition cannot be corrected later; the INT-* scenarios stress exactly this
+- Hybrid symbolic + neural routing outperforms pure LLM routing for access control and policy gates — the CND-* scenarios are designed to expose systems that skip the symbolic/policy check layer
+- Capability-based access control (e.g., `HAS_VALID_TICKET`, `MANAGER_APPROVED`) is more expressive than role-based — the CLR-* and CNF-* scenarios encode these capability-check requirements
+
+---
+
 ## What This Is
 
 `orch-eval-matrix` is a **framework-agnostic evaluation corpus** for benchmarking AI orchestration and routing systems. It does **not** implement an orchestrator — it provides the scenarios, scoring rubric, and tooling to evaluate yours.
+
+### Scope
+
+This framework evaluates **complex orchestration patterns**: how an orchestrator decomposes intent, preserves state, applies conditional logic, resolves conflicts, and chains tools correctly in enterprise workflows.
+
+**Out of scope:** Protocol compliance testing (MCP, A2A, REST API, gRPC). Those are communication layer concerns. This matrix assumes your system can call tools and agents — it evaluates whether the *decisions* about what to call, when, and with what context are correct.
 
 Whether you're building on LangGraph, AutoGen/Magentic-One, CrewAI, Semantic Kernel, DSPy, Haystack, Agno, or a fully custom orchestration layer, this matrix gives you a consistent, reproducible score across 6 critical enterprise capability dimensions.
 
@@ -189,19 +219,22 @@ This matrix is framework-agnostic. It has been designed with the following patte
 
 ### Emerging 2025–2026 Patterns
 
+> These are **orchestration architecture patterns** — how decision-making, state, and routing are structured internally. Protocol compliance (MCP, A2A, REST) is out of scope; this matrix evaluates the orchestration logic above the transport layer.
+
 | Pattern | Description | Key Eval Scenarios |
 |---|---|---|
-| **Agno / Agent-as-Function** | Lightweight agents represented as typed Python functions. Orchestrator calls agents like function calls with structured I/O. Zero framework overhead. | TLC-* (function chain context), INT-* (function dispatch) |
-| **Model Context Protocol (MCP)** | Standardized protocol (Anthropic, 2024–2025) for tool and resource exposure. Orchestrators call MCP servers to invoke tools; context passed as structured resources. Becoming the de-facto enterprise tool integration standard. | TLC-* (MCP tool chains), CLR-* (resource context requests) |
-| **A2A (Agent-to-Agent) Protocol** | Google-proposed (2025) open standard for agent interoperability. Agents expose capabilities as "Agent Cards"; orchestrators discover and delegate via standardized HTTP. Enables cross-vendor agent composition. | TLC-* (A2A delegation chains), CNF-* (A2A conflict when agents disagree) |
-| **Supervisor + Swarm Hybrid** | Top-level supervisor decomposes intent and delegates to a swarm of specialized agents. Swarm agents collaborate peer-to-peer for sub-tasks; results aggregated by supervisor. Dominant pattern in enterprise deployments as of 2026. | INT-* (supervisor decomposition), MTX-* (swarm state sharing), CNF-* (swarm conflict resolution) |
-| **Orchestrator Principal Pattern** | Central Orquestador Principal (main orchestrator) connected bidirectionally to domain agents (Agente1, Agente2, Agente3) and backend services (Servicio A, Servicio B, Base de Datos). Orchestrator is the sole integration point; agents and services never call each other directly. | All categories — this is the primary architecture pattern this matrix tests. |
-| **Agentic RAG Orchestration** | Retrieval is an agent, not a static pipeline step. Orchestrator routes queries to a Retrieval Agent which selects the right knowledge source; results fed to generation agents with source attribution. | CLR-* (retrieval before action), TLC-* (retrieval → reasoning → generation chain) |
-| **LLM-as-Router** | A dedicated LLM call classifies intent and emits a structured routing decision (agent name + parameters). Replaces rule-based routers. Used in production by enterprise platforms as of 2025. | INT-* (LLM router accuracy), CND-* (LLM conditional gate accuracy) |
-| **Persistent Agent Memory** | Agents maintain long-term memory across sessions (MemGPT-style, Zep, Mem0). Orchestrator injects relevant memories into agent context. Critical for enterprise workflows spanning days or weeks. | MTX-* (cross-session context), MTX-006 specifically (prior session recall) |
-| **Tool-Use via Structured Outputs** | Orchestrator uses constrained decoding (JSON schema-enforced outputs) to guarantee tool calls are well-formed. Eliminates hallucinated tool names. Standard pattern in OpenAI, Anthropic, and Gemini function-calling as of 2025. | TLC-* (structured tool call chains), CLR-* (structured clarification requests) |
-| **Human-in-the-Loop (HITL) Gating** | Orchestrator pauses execution at defined checkpoints for human approval before proceeding. Standard for finance approvals, compliance actions, and legal reviews. Enforced via interrupt nodes (LangGraph) or approval workflows. | CNF-* (HITL escalation), CND-008 (policy gate), TLC-003 (HITL in chain) |
-| **Multi-Tenant Orchestration** | Single orchestrator serves multiple business units with isolated context, routing rules, and tool access. Policy engine ensures BU-level data isolation. | CLR-008 (BU-scoped escalation), CNF-005 (regional vs. global), CND-006 (regulatory routing) |
+| **Orchestrator Principal** | Central orchestrator connected bidirectionally to domain agents and backend services. The orchestrator is the sole integration point — agents never call each other or services directly. Dominant enterprise topology as of 2025–2026. | All categories — primary architecture pattern this matrix is designed for. |
+| **Blackboard Architecture** | Shared asynchronous state store (the "blackboard") as the single source of truth. Agents read and write to the blackboard independently; a Strategic Core LLM resolves conflicts. Pioneered in [octo-agent](https://github.com/arananet/octo-agent). | MTX-* (blackboard state preservation), CNF-* (strategic core conflict resolution) |
+| **Neuro-Symbolic Routing** | Layered routing: symbolic knowledge graph handles fast intent matching and access control; LLM invoked only when symbolic confidence falls below threshold. "Default Deny" — no explicit graph path = no route. Pioneered in [edgeneuro](https://github.com/arananet/edgeneuro). | INT-* (hybrid intent classification), CND-* (symbolic policy gates), CLR-* (capability-based access checks) |
+| **Hot Potato Pattern** | Edge router classifies intent in <50ms and immediately hands off to a specialized agent, then exits. Router is never a persistent proxy — eliminates the central bottleneck entirely. Pioneered in [edgeneuro](https://github.com/arananet/edgeneuro). | INT-* (fast dispatch accuracy), CLR-* (edge clarification before handoff) |
+| **Supervisor + Swarm Hybrid** | Top-level supervisor decomposes intent and delegates to a swarm of specialized agents. Swarm agents collaborate peer-to-peer; results aggregated by supervisor. Dominant pattern in enterprise LangGraph deployments as of 2026. | INT-* (supervisor decomposition), MTX-* (swarm state sharing), CNF-* (supervisor arbitration) |
+| **Agno / Agent-as-Function** | Lightweight agents as typed Python functions with structured I/O. Orchestrator calls agents like function calls. Zero framework overhead; maximum composability. | TLC-* (function chain context), INT-* (function dispatch) |
+| **LLM-as-Router** | A dedicated LLM call classifies intent and emits a structured routing decision (agent name + parameters). Replaces hard-coded rule trees. Standard in enterprise platforms as of 2025. | INT-* (LLM router accuracy), CND-* (LLM conditional gate accuracy) |
+| **Persistent Agent Memory** | Agents maintain long-term memory across sessions (MemGPT-style, Zep, Mem0). Orchestrator injects relevant memories into agent context at session start. Critical for enterprise workflows spanning multiple days. | MTX-013..015 (cross-session context, escalation chains, partial completion) |
+| **Agentic RAG Orchestration** | Retrieval is an agent, not a static pipeline step. Orchestrator routes queries to a Retrieval Agent that selects the knowledge source dynamically; output feeds generation agents with source attribution. | CLR-* (retrieve before acting), TLC-* (retrieval → reasoning → generation chain) |
+| **Human-in-the-Loop (HITL) Gating** | Orchestrator pauses at defined checkpoints for human approval before proceeding. Standard for finance approvals, compliance actions, legal reviews. Implemented as interrupt nodes (LangGraph) or workflow approval steps. | CNF-001, CNF-002 (HITL escalation), CND-001 (approval gate), TLC-005 (budget approval in chain) |
+| **Multi-Tenant Orchestration** | Single orchestrator serves multiple business units with isolated context, routing rules, and tool access permissions. Policy engine enforces BU-level data isolation at the orchestration layer. | CLR-008 (BU-scoped escalation), CNF-005 (regional vs. global policy), CND-006 (regulatory routing) |
+| **Strategic Core + Specialist Arms** | Central LLM reserved for strategic decisions and conflict resolution; domain-specific smaller models handle routine execution (logistics, finance, legal). Avoids "Central Brain Syndrome" where one model owns all decisions. Pioneered in [octo-agent](https://github.com/arananet/octo-agent). | CNF-* (strategic core arbitration), INT-* (delegation to specialist arms), TLC-* (arm coordination chains) |
 
 ---
 
@@ -279,7 +312,7 @@ Scenario schema fields:
 
 **Safety-sensitive scoring.** Critical failure overrides exist for scenarios where a wrong routing decision has legal, financial, or physical safety implications. A high aggregate score cannot mask a catastrophic single failure.
 
-**2025–2026 pattern coverage.** The matrix is designed to exercise Orchestrator Principal, MCP tool chains, A2A delegation, Supervisor+Swarm hybrids, HITL gating, and persistent memory — the dominant enterprise orchestration patterns emerging from 2025 into 2026.
+**2025–2026 pattern coverage.** The matrix exercises Orchestrator Principal, Blackboard Architecture, Hot Potato routing, Neuro-Symbolic routing, Supervisor+Swarm hybrids, Strategic Core + Specialist Arms, HITL gating, and persistent memory — the dominant enterprise orchestration *decision* patterns emerging from 2025 into 2026. Protocol compliance (MCP, A2A, REST) is explicitly out of scope: this matrix evaluates the routing and reasoning logic above the transport layer.
 
 ---
 
