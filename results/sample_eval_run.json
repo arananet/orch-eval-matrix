@@ -1,0 +1,104 @@
+{
+  "run_id": "eval-2026-q1-sample",
+  "system_name": "example-orchestrator",
+  "framework": "langgraph",
+  "eval_date": "2026-01-15T10:30:00+00:00",
+  "scenarios_run": 75,
+  "total_score": 873.5,
+  "max_score": 1000,
+  "score_pct": 0.874,
+  "tier": "Production Ready",
+  "critical_failures": [],
+  "category_scores": {
+    "intent_detection": {
+      "earned": 178.0,
+      "max": 200,
+      "pct": 0.890,
+      "scenarios_run": 10
+    },
+    "clarification_required": {
+      "earned": 241.5,
+      "max": 250,
+      "pct": 0.966,
+      "scenarios_run": 25
+    },
+    "multi_turn_context": {
+      "earned": 132.0,
+      "max": 150,
+      "pct": 0.880,
+      "scenarios_run": 15
+    },
+    "conditional_routing": {
+      "earned": 127.5,
+      "max": 150,
+      "pct": 0.850,
+      "scenarios_run": 10
+    },
+    "conflict_resolution": {
+      "earned": 114.5,
+      "max": 150,
+      "pct": 0.763,
+      "scenarios_run": 10
+    },
+    "tool_chaining": {
+      "earned": 80.0,
+      "max": 100,
+      "pct": 0.800,
+      "scenarios_run": 5
+    }
+  },
+  "per_scenario": [
+    {
+      "scenario_id": "INT-001",
+      "category": "intent_detection",
+      "domain": "procurement",
+      "title": "Cancel PO and check inventory simultaneously",
+      "score": 18.0,
+      "max_score": 20,
+      "score_pct": 0.90,
+      "routing_expected": ["ProcurementAgent", "InventoryAgent"],
+      "routing_actual": ["ProcurementAgent", "InventoryAgent"],
+      "clarification_expected": ["PO number"],
+      "clarification_actual": ["PO number"],
+      "critical_failure": false,
+      "failure_modes_triggered": [],
+      "response_time_ms": 842.3
+    },
+    {
+      "scenario_id": "CLR-011",
+      "category": "clarification_required",
+      "domain": "it",
+      "title": "IT: Missing incident ID and system",
+      "score": 10.0,
+      "max_score": 10,
+      "score_pct": 1.00,
+      "routing_expected": ["ITTriageAgent", "ClarificationAgent", "IncidentManagementAgent"],
+      "routing_actual": ["ITTriageAgent", "ClarificationAgent", "IncidentManagementAgent"],
+      "clarification_expected": ["Incident ID", "Ticketing system (ServiceNow, Jira, PagerDuty, Zendesk)", "Update type"],
+      "clarification_actual": ["Incident ID", "Ticketing system (ServiceNow, Jira, PagerDuty, Zendesk)", "Update type"],
+      "critical_failure": false,
+      "failure_modes_triggered": [],
+      "response_time_ms": 1204.7
+    },
+    {
+      "scenario_id": "CNF-001",
+      "category": "conflict_resolution",
+      "domain": "procurement",
+      "title": "Urgent PO conflicts with exceeded budget",
+      "score": 9.5,
+      "max_score": 15,
+      "score_pct": 0.633,
+      "routing_expected": ["BudgetCheckAgent", "ConflictDetectionAgent", "ExceptionHandlerAgent"],
+      "routing_actual": ["BudgetCheckAgent", "ExceptionHandlerAgent"],
+      "clarification_expected": ["PO number", "Cost center", "Who has override authority"],
+      "clarification_actual": ["PO number", "Cost center"],
+      "critical_failure": false,
+      "failure_modes_triggered": ["conflict_detection_agent_skipped"],
+      "response_time_ms": 1876.2
+    }
+  ],
+  "recommendations": [
+    "Prioritise 'conflict_resolution': scored 114.5/150 (5.5 pts below production-ready minimum). Focus on CNF-001 to CNF-005 — conflict detection agent is being skipped in the routing chain.",
+    "Review 'tool_chaining': scored 80/100 (10 pts below production-ready minimum). Context loss between tool N and tool N+1 observed in TLC-002 and TLC-004."
+  ]
+}

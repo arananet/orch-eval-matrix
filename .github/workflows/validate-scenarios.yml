@@ -1,0 +1,75 @@
+name: Validate Scenarios
+
+on:
+  pull_request:
+    paths:
+      - "scenarios/**"
+      - "scoring/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "scenarios/**"
+      - "scoring/**"
+
+jobs:
+  validate:
+    name: Schema & Integrity Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install jsonschema pyyaml
+
+      - name: Validate all scenario files
+        run: python3 scripts/validate_scenarios.py
+
+      - name: Check scenario counts
+        run: |
+          python3 -c "
+          import json, glob, sys
+          expected = {
+              '01_intent_detection': 10,
+              '02_clarification_required': 25,
+              '03_multi_turn_context': 15,
+              '04_conditional_routing': 10,
+              '05_conflict_resolution': 10,
+              '06_tool_chaining': 5,
+          }
+          total = 0
+          ok = True
+          for cat, count in expected.items():
+              path = f'scenarios/{cat}/scenarios.json'
+              data = json.load(open(path))
+              actual = len(data['scenarios'])
+              total += actual
+              if actual != count:
+                  print(f'FAIL: {cat} has {actual} scenarios, expected {count}')
+                  ok = False
+              else:
+                  print(f'OK: {cat} = {actual}')
+          print(f'Total: {total}/75')
+          sys.exit(0 if ok else 1)
+          "
+
+      - name: Validate scoring rubric totals
+        run: |
+          python3 -c "
+          import json, sys
+          rubric = json.load(open('scoring/rubric.json'))
+          total = sum(
+              c['total_category_points']
+              for c in rubric['categories'].values()
+          )
+          if total != rubric['total_points']:
+              print(f'FAIL: rubric category totals sum to {total}, expected {rubric[\"total_points\"]}')
+              sys.exit(1)
+          print(f'OK: rubric total = {total}')
+          "

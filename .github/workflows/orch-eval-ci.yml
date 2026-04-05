@@ -1,0 +1,59 @@
+name: Orchestration Evaluation Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      categories:
+        description: "Categories to run (space-separated, or 'all')"
+        default: "all"
+      fail_threshold:
+        description: "Minimum passing score (default: 850)"
+        default: "850"
+
+jobs:
+  orch-eval:
+    name: Run Evaluation Matrix
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e ".[langfuse]"
+
+      - name: Run evaluation matrix
+        env:
+          ORCH_API_KEY: ${{ secrets.ORCH_API_KEY }}
+          LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+        run: |
+          python3 scripts/eval_runner.py \
+            --config examples/sample_run_config.yaml \
+            --output results/ci-run-${{ github.run_number }}.json
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: orch-eval-results-${{ github.run_number }}
+          path: results/
+
+      - name: Check score threshold
+        run: |
+          python3 -c "
+          import json, sys
+          result = json.load(open('results/ci-run-${{ github.run_number }}.json'))
+          score = result['total_score']
+          threshold = ${{ github.event.inputs.fail_threshold }}
+          tier = result['tier']
+          print(f'Score: {score}/1000 — {tier}')
+          if score < threshold:
+              print(f'FAIL: score {score} below threshold {threshold}')
+              sys.exit(1)
+          print('PASS')
+          "

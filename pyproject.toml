@@ -1,0 +1,48 @@
+[project]
+name = "orch-eval-matrix"
+version = "1.0.0"
+description = "Enterprise orchestration & routing evaluation framework — 75 production-grade scenarios"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Eduardo Arana", email = "github@arananet" }]
+requires-python = ">=3.10"
+
+dependencies = [
+    "jsonschema>=4.21.0",
+    "httpx>=0.27.0",
+    "pyyaml>=6.0.1",
+    "rich>=13.7.0",
+]
+
+[project.optional-dependencies]
+langfuse = [
+    "langfuse>=2.36.0",
+]
+phoenix = [
+    "arize-phoenix>=4.0.0",
+    "opentelemetry-sdk>=1.24.0",
+    "opentelemetry-exporter-otlp>=1.24.0",
+]
+otel = [
+    "opentelemetry-sdk>=1.24.0",
+    "opentelemetry-exporter-otlp>=1.24.0",
+]
+dev = [
+    "pytest>=8.2.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.4.0",
+]
+all = [
+    "orch-eval-matrix[langfuse,phoenix,otel,dev]",
+]
+
+[project.scripts]
+orch-eval = "scripts.eval_runner:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
