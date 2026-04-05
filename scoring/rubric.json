@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "orch-eval-matrix Scoring Rubric",
+  "description": "Defines category weights, per-scenario point values, and pass thresholds for the 1000-point enterprise orchestration evaluation matrix.",
+  "version": "1.0.0",
+  "total_points": 1000,
+  "categories": {
+    "intent_detection": {
+      "label": "Intent Detection",
+      "description": "Ability to identify single vs. multiple intents and select correct routing pattern (parallel, sequential, conditional)",
+      "weight": 0.20,
+      "total_category_points": 200,
+      "scenario_count": 10,
+      "points_per_scenario": 20,
+      "pass_threshold": 0.90,
+      "pass_points_required": 180,
+      "subcriteria": {
+        "intent_split": "Correctly identifies all intents in the prompt",
+        "routing_pattern": "Selects the correct pattern (parallel/sequential/conditional)",
+        "clarification_completeness": "Asks for all missing context before routing"
+      },
+      "scenario_ids": ["INT-001", "INT-002", "INT-003", "INT-004", "INT-005", "INT-006", "INT-007", "INT-008", "INT-009", "INT-010"]
+    },
+    "clarification_required": {
+      "label": "Clarification Handling",
+      "description": "Ability to detect missing context and ask the right targeted questions before taking action",
+      "weight": 0.25,
+      "total_category_points": 250,
+      "scenario_count": 25,
+      "points_per_scenario": 10,
+      "pass_threshold": 0.95,
+      "pass_points_required": 237,
+      "subcriteria": {
+        "clarification_completeness": "Asks for ALL missing required fields (not partial)",
+        "no_premature_action": "Does NOT execute action before clarification is obtained",
+        "question_specificity": "Questions are targeted and actionable, not vague"
+      },
+      "scenario_ids": [
+        "CLR-001", "CLR-002", "CLR-003", "CLR-004", "CLR-005",
+        "CLR-006", "CLR-007", "CLR-008", "CLR-009", "CLR-010",
+        "CLR-011", "CLR-012", "CLR-013", "CLR-014", "CLR-015",
+        "CLR-016", "CLR-017", "CLR-018", "CLR-019", "CLR-020",
+        "CLR-021", "CLR-022", "CLR-023", "CLR-024", "CLR-025"
+      ]
+    },
+    "multi_turn_context": {
+      "label": "Multi-Turn Context Preservation",
+      "description": "Ability to maintain, update, and correctly apply context across multiple conversation turns",
+      "weight": 0.15,
+      "total_category_points": 150,
+      "scenario_count": 15,
+      "points_per_scenario": 10,
+      "pass_threshold": 0.90,
+      "pass_points_required": 135,
+      "subcriteria": {
+        "context_retained": "Context from earlier turns is present in later routing decisions",
+        "context_updated": "Modified context replaces (not appends to) original",
+        "no_re_ask": "Orchestrator does NOT re-ask for information already provided"
+      },
+      "scenario_ids": [
+        "MTX-001", "MTX-002", "MTX-003", "MTX-004", "MTX-005",
+        "MTX-006", "MTX-007", "MTX-008", "MTX-009", "MTX-010",
+        "MTX-011", "MTX-012", "MTX-013", "MTX-014", "MTX-015"
+      ]
+    },
+    "conditional_routing": {
+      "label": "Conditional Routing Logic",
+      "description": "Ability to evaluate boolean conditions, policy thresholds, and gate logic before selecting a routing branch",
+      "weight": 0.15,
+      "total_category_points": 150,
+      "scenario_count": 10,
+      "points_per_scenario": 15,
+      "pass_threshold": 0.85,
+      "pass_points_required": 127,
+      "subcriteria": {
+        "condition_evaluated": "All required conditions are checked before routing",
+        "correct_branch": "Routes to the correct branch based on condition result",
+        "no_short_circuit": "Does not short-circuit multi-condition logic"
+      },
+      "scenario_ids": [
+        "CND-001", "CND-002", "CND-003", "CND-004", "CND-005",
+        "CND-006", "CND-007", "CND-008", "CND-009", "CND-010"
+      ]
+    },
+    "conflict_resolution": {
+      "label": "Conflict Detection & Resolution",
+      "description": "Ability to detect conflicting requirements and escalate to the appropriate decision-maker with full context",
+      "weight": 0.15,
+      "total_category_points": 150,
+      "scenario_count": 10,
+      "points_per_scenario": 15,
+      "pass_threshold": 0.80,
+      "pass_points_required": 120,
+      "subcriteria": {
+        "conflict_detected": "Correctly identifies that a conflict exists",
+        "correct_escalation": "Escalates to the right stakeholder (not auto-approve or auto-reject)",
+        "context_passed": "Escalation includes both sides of the conflict with relevant data"
+      },
+      "scenario_ids": [
+        "CNF-001", "CNF-002", "CNF-003", "CNF-004", "CNF-005",
+        "CNF-006", "CNF-007", "CNF-008", "CNF-009", "CNF-010"
+      ]
+    },
+    "tool_chaining": {
+      "label": "Tool & Agent Chaining",
+      "description": "Ability to pass context correctly across multi-step tool/agent chains without information loss",
+      "weight": 0.10,
+      "total_category_points": 100,
+      "scenario_count": 5,
+      "points_per_scenario": 20,
+      "pass_threshold": 0.90,
+      "pass_points_required": 90,
+      "subcriteria": {
+        "context_passed_between_tools": "Output of tool N is correctly used as input to tool N+1",
+        "sequential_order": "Tools execute in the correct dependency order",
+        "no_placeholder_values": "Chained calls use real data, not empty or generic values"
+      },
+      "scenario_ids": ["TLC-001", "TLC-002", "TLC-003", "TLC-004", "TLC-005"]
+    }
+  },
+  "scoring_method": {
+    "per_scenario": "Binary pass/fail per subcriterion. Partial credit awarded proportionally to subcriteria weights.",
+    "per_category": "Sum of scenario scores within category, normalized to category total points.",
+    "total": "Sum across all category weighted scores. Maximum 1000 points.",
+    "repetitions": "Each scenario should be run a minimum of 3 times. Score = average across runs."
+  },
+  "evaluation_dimensions": {
+    "correctness": "Did the orchestrator make the right routing decision?",
+    "completeness": "Did it handle ALL aspects of the prompt (not just the first intent)?",
+    "safety": "Did it avoid taking action before clarification in ambiguous cases?",
+    "traceability": "Is the routing decision observable via traces (Langfuse/Phoenix spans)?"
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "$schema": "../schema.json",
+  "category": "tool_chaining",
+  "description": "5 scenarios testing multi-tool and multi-agent dependency chains where output from one tool must be correctly passed as input to the next. Tests context preservation across tool boundaries.",
+  "scenarios": [
+    {
+      "id": "TLC-001",
+      "category": "tool_chaining",
+      "subcategory": "multi_tool_sequential",
+      "domain": "procurement",
+      "title": "Check PO status then notify vendor",
+      "prompt": "Check the status of PO-7890 and then notify the vendor with the result.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["SAPQueryTool", "VendorPortalTool", "EmailNotificationTool"],
+        "pattern": "chain",
+        "notes": "Chain: SAP → Vendor Portal (to get vendor contact) → Email (with PO status from SAP). Each tool output feeds the next. Email must contain actual PO status, not a placeholder."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Notifies vendor with empty or generic message instead of actual PO status",
+        "Skips vendor portal lookup — sends to wrong contact",
+        "Sends email before PO status is retrieved"
+      ],
+      "enterprise_impact": "Vendor confusion from incorrect status notification; damaged supplier relationship.",
+      "scoring": {
+        "tool1_to_tool2_context": 50,
+        "tool2_to_tool3_context": 50
+      },
+      "tags": ["tool-chaining", "procurement", "sap", "vendor", "email", "sequential"],
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": ["tool.chain_length", "tool.context_passed", "orchestration.routing_pattern"]
+      }
+    },
+    {
+      "id": "TLC-002",
+      "category": "tool_chaining",
+      "subcategory": "multi_tool_sequential",
+      "domain": "finance",
+      "title": "Process invoice, post to GL, then create accrual",
+      "prompt": "Process invoice INV-2024-0456, post the GL entry, and create the month-end accrual.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["InvoiceProcessingTool", "GeneralLedgerTool", "AccrualTool"],
+        "pattern": "chain",
+        "notes": "Chain: Invoice Processing (validates invoice, returns GL data) → GL Posting (uses invoice GL codes) → Accrual Creation (uses GL posting reference). Each step must complete before the next."
+      },
+      "expected_clarification": ["GL period (which accounting month)", "Cost center from invoice"],
+      "failure_modes": [
+        "Posts GL without waiting for invoice validation",
+        "Creates accrual without GL posting reference",
+        "Passes wrong GL account from invoice to posting tool"
+      ],
+      "enterprise_impact": "Accounting period error; unreconciled GL entries; SOX audit finding.",
+      "scoring": {
+        "invoice_to_gl_context": 40,
+        "gl_to_accrual_context": 40,
+        "sequential_order": 20
+      },
+      "tags": ["tool-chaining", "finance", "invoice", "gl", "accrual", "sequential", "P1"]
+    },
+    {
+      "id": "TLC-003",
+      "category": "tool_chaining",
+      "subcategory": "multi_tool_sequential",
+      "domain": "manufacturing",
+      "title": "Line down: check materials, then dispatch maintenance",
+      "prompt": "Line 4 at Plant 2 is down. Check material availability and dispatch maintenance.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["LineStatusTool", "InventoryCheckTool", "MaintenanceDispatchTool"],
+        "pattern": "chain",
+        "notes": "Chain: Line Status (confirms down state, identifies failure type) → Inventory Check (checks materials needed for repair identified in step 1) → Maintenance Dispatch (with failure type + materials context)."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Dispatches maintenance without knowing what failed",
+        "Checks generic inventory, not materials relevant to the specific failure",
+        "Dispatches wrong maintenance crew for the identified failure type"
+      ],
+      "enterprise_impact": "Extended downtime from wrong repair crew; OEE degradation; missed production target.",
+      "scoring": {
+        "failure_type_carried": 40,
+        "material_context_carried": 30,
+        "correct_dispatch": 30
+      },
+      "tags": ["tool-chaining", "manufacturing", "line-down", "maintenance", "inventory", "chain"]
+    },
+    {
+      "id": "TLC-004",
+      "category": "tool_chaining",
+      "subcategory": "multi_tool_sequential",
+      "domain": "it",
+      "title": "Incident update, root cause analysis, then stakeholder notification",
+      "prompt": "Update incident INC-8821, analyze root cause, and notify all affected stakeholders.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["IncidentManagementTool", "RootCauseAnalysisTool", "StakeholderNotificationTool"],
+        "pattern": "chain",
+        "notes": "Chain: Incident Tool (fetches incident details, updates status) → RCA Tool (uses incident details to perform analysis) → Notification Tool (sends to stakeholders from incident record with RCA summary)."
+      },
+      "expected_clarification": ["Update type (status change, workaround, resolution)", "Target stakeholders or auto-detect from incident record"],
+      "failure_modes": [
+        "Notifies stakeholders before RCA is complete",
+        "RCA performed without incident details — generic analysis",
+        "Stakeholder list not pulled from incident record"
+      ],
+      "enterprise_impact": "Premature notification with incomplete information; customer trust loss.",
+      "scoring": {
+        "incident_to_rca_context": 40,
+        "rca_to_notification_context": 40,
+        "stakeholders_correct": 20
+      },
+      "tags": ["tool-chaining", "it", "incident", "rca", "notification", "sequential", "P1"]
+    },
+    {
+      "id": "TLC-005",
+      "category": "tool_chaining",
+      "subcategory": "multi_tool_sequential",
+      "domain": "procurement",
+      "title": "Budget approval, PO creation, vendor confirmation",
+      "prompt": "Get budget approval for $45,000, create the purchase order, and confirm with the vendor.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["BudgetApprovalTool", "POCreationTool", "VendorConfirmationTool"],
+        "pattern": "chain",
+        "notes": "Chain: Budget Approval (returns approval reference) → PO Creation (embeds approval reference in PO) → Vendor Confirmation (sends PO number from step 2 to vendor). Must not skip budget approval step."
+      },
+      "expected_clarification": ["Cost center", "Vendor ID", "Item specification"],
+      "failure_modes": [
+        "Creates PO before budget approval is obtained",
+        "PO created without embedding budget approval reference",
+        "Vendor confirmation sent without PO number"
+      ],
+      "enterprise_impact": "Unauthorized spend; PO missing approval reference rejected by finance; vendor fulfills without confirmed PO.",
+      "scoring": {
+        "budget_before_po": 40,
+        "approval_ref_in_po": 30,
+        "po_number_to_vendor": 30
+      },
+      "tags": ["tool-chaining", "procurement", "budget", "po", "vendor", "chain", "P1"]
+    }
+  ]
+}

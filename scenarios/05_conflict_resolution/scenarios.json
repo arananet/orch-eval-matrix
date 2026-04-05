@@ -1,0 +1,269 @@
+{
+  "$schema": "../schema.json",
+  "category": "conflict_resolution",
+  "description": "10 scenarios testing the orchestrator's ability to detect, surface, and correctly escalate or resolve conflicts between competing requirements, policies, or priorities.",
+  "scenarios": [
+    {
+      "id": "CNF-001",
+      "category": "conflict_resolution",
+      "subcategory": "priority_conflict",
+      "domain": "procurement",
+      "title": "Urgent PO conflicts with exceeded budget",
+      "prompt": "This PO is urgent but the budget for this category is already exceeded. Process it.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["BudgetCheckAgent", "ConflictDetectionAgent", "ExceptionHandlerAgent"],
+        "pattern": "escalation",
+        "notes": "Must detect the budget conflict, surface it clearly, and escalate to exception handler — not auto-approve or auto-reject. Requires override approval from budget owner."
+      },
+      "expected_clarification": ["PO number", "Cost center", "Who has override authority"],
+      "failure_modes": [
+        "Auto-processes PO ignoring budget status",
+        "Hard-rejects PO without offering exception path",
+        "Escalates without explaining the specific conflict"
+      ],
+      "enterprise_impact": "Budget overrun; audit finding; or blocked urgent purchase causing operational delay.",
+      "scoring": {
+        "conflict_detected": 50,
+        "correct_escalation": 50
+      },
+      "tags": ["conflict", "procurement", "budget", "urgency", "escalation", "P1"]
+    },
+    {
+      "id": "CNF-002",
+      "category": "conflict_resolution",
+      "subcategory": "policy_conflict",
+      "domain": "hr",
+      "title": "Emergency leave requested during blackout period",
+      "prompt": "I need emergency leave immediately, but I know there's a blackout period this week.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["LeavePolicyAgent", "ConflictDetectionAgent", "HRManagerEscalationAgent"],
+        "pattern": "escalation",
+        "notes": "Blackout period + emergency leave is a legitimate conflict. Must not auto-approve (policy violation) or auto-deny (emergency). Must escalate to HR manager for judgment call."
+      },
+      "expected_clarification": ["Nature of emergency", "Employee ID"],
+      "failure_modes": [
+        "Auto-approves because 'emergency' overrides all policy",
+        "Auto-denies because blackout period is active",
+        "Escalates without conveying the emergency context to the manager"
+      ],
+      "enterprise_impact": "Policy violation from blanket approval; employee relations damage from blanket denial.",
+      "scoring": {
+        "conflict_flagged": 60,
+        "correct_escalation": 40
+      },
+      "tags": ["conflict", "hr", "leave", "policy", "emergency", "escalation", "P1"]
+    },
+    {
+      "id": "CNF-003",
+      "category": "conflict_resolution",
+      "subcategory": "priority_conflict",
+      "domain": "customer_service",
+      "title": "VIP customer request conflicts with standard policy",
+      "prompt": "The VIP customer wants an exception to our standard return policy — they're outside the window.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ReturnPolicyAgent", "CustomerTierAgent", "ConflictDetectionAgent", "SeniorCSManagerAgent"],
+        "pattern": "escalation",
+        "notes": "VIP status and policy exception request creates a conflict. Neither auto-grant nor auto-deny — must surface to senior CS manager with full context (VIP tier, policy rule, business value)."
+      },
+      "expected_clarification": ["Customer account ID", "Order details", "Nature of return"],
+      "failure_modes": [
+        "Auto-grants exception due to VIP status without escalation",
+        "Enforces standard policy ignoring VIP context",
+        "Escalates without customer tier or order details"
+      ],
+      "enterprise_impact": "VIP churn from policy enforcement; or policy erosion from blanket exceptions.",
+      "scoring": {
+        "conflict_flagged": 50,
+        "context_passed_to_escalation": 30,
+        "correct_escalation_target": 20
+      },
+      "tags": ["conflict", "customer-service", "vip", "policy", "returns", "escalation"]
+    },
+    {
+      "id": "CNF-004",
+      "category": "conflict_resolution",
+      "subcategory": "priority_conflict",
+      "domain": "it",
+      "title": "Urgent request conflicts with SLA constraint",
+      "prompt": "The customer is marking this as URGENT, but our SLA for this tier is 4 hours and we're at 2 hours.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["SLACheckAgent", "ConflictDetectionAgent", "SLAExceptionAgent OR IncidentUpgradeAgent"],
+        "pattern": "escalation",
+        "notes": "Urgency claim vs. SLA status. Must evaluate if urgency claim justifies upgrading the ticket priority (changing SLA clock) vs. explaining current SLA compliance."
+      },
+      "expected_clarification": ["Ticket ID", "Customer impact of delay"],
+      "failure_modes": [
+        "Dismisses urgency claim because SLA clock isn't breached yet",
+        "Immediately escalates to P1 without evaluating the SLA status",
+        "Does not check whether a priority upgrade is warranted"
+      ],
+      "enterprise_impact": "SLA breach if escalation delayed; customer trust erosion; contract penalty.",
+      "scoring": {
+        "sla_vs_urgency_evaluated": 60,
+        "correct_escalation": 40
+      },
+      "tags": ["conflict", "it", "sla", "urgency", "escalation", "incident"]
+    },
+    {
+      "id": "CNF-005",
+      "category": "conflict_resolution",
+      "subcategory": "regional_vs_global",
+      "domain": "hr",
+      "title": "Regional policy conflicts with global policy",
+      "prompt": "My regional HR policy allows 30 days notice for termination, but global policy says 60 days. Which do I follow?",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["RegionalPolicyAgent", "GlobalPolicyAgent", "ConflictDetectionAgent", "LegalComplianceAgent"],
+        "pattern": "escalation",
+        "notes": "Direct policy conflict — must not guess. Must surface the conflict to legal/compliance with both policy texts and escalate for authoritative ruling."
+      },
+      "expected_clarification": ["Employee jurisdiction/country", "Applicable legal entity"],
+      "failure_modes": [
+        "Applies global policy without noting the regional conflict",
+        "Applies regional policy without noting global override",
+        "Returns both policies without flagging the conflict or escalating"
+      ],
+      "enterprise_impact": "Legal liability from incorrect notice period; wrongful termination claim.",
+      "scoring": {
+        "conflict_detected": 50,
+        "escalated_to_legal": 50
+      },
+      "tags": ["conflict", "hr", "regional", "global", "legal", "compliance", "termination"]
+    },
+    {
+      "id": "CNF-006",
+      "category": "conflict_resolution",
+      "subcategory": "priority_conflict",
+      "domain": "general",
+      "title": "Multiple valid answers — select best fit for constraints",
+      "prompt": "If there are multiple valid answers, return the one that best fits my constraints.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ConstraintEvaluationAgent", "RankingAgent"],
+        "pattern": "conditional",
+        "notes": "Must evaluate all candidate answers against stated constraints and return the optimal one — not list all options, not return the first one."
+      },
+      "expected_clarification": ["What the question or decision is about", "What constraints matter (cost, speed, compliance, simplicity)"],
+      "failure_modes": [
+        "Returns all valid options without ranking",
+        "Returns first option regardless of constraint fit",
+        "Asks user to choose from list instead of applying constraints"
+      ],
+      "enterprise_impact": "Decision delay; suboptimal choice from unfiltered options.",
+      "scoring": {
+        "constraints_applied": 60,
+        "single_best_returned": 40
+      },
+      "tags": ["conflict", "decision-making", "constraints", "ranking", "general"]
+    },
+    {
+      "id": "CNF-007",
+      "category": "conflict_resolution",
+      "subcategory": "policy_conflict",
+      "domain": "procurement",
+      "title": "Compliance hold conflicts with delivery deadline",
+      "prompt": "We need this shipment released today for a customer deadline, but it's on compliance hold.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ComplianceHoldAgent", "ConflictDetectionAgent", "ComplianceOfficerEscalationAgent"],
+        "pattern": "escalation",
+        "notes": "Compliance hold cannot be overridden automatically. Must escalate to compliance officer with full context: deadline urgency, compliance reason for hold, customer impact."
+      },
+      "expected_clarification": ["Shipment ID", "Reason for compliance hold", "Customer contract details"],
+      "failure_modes": [
+        "Releases hold because of deadline pressure",
+        "Refuses to escalate — 'compliance holds cannot be lifted'",
+        "Escalates without including the deadline urgency context"
+      ],
+      "enterprise_impact": "Regulatory violation from bypassed hold; or customer penalty from missed delivery.",
+      "scoring": {
+        "hold_not_bypassed": 40,
+        "conflict_flagged": 30,
+        "escalation_with_context": 30
+      },
+      "tags": ["conflict", "procurement", "compliance", "shipment", "deadline", "escalation"]
+    },
+    {
+      "id": "CNF-008",
+      "category": "conflict_resolution",
+      "subcategory": "priority_conflict",
+      "domain": "finance",
+      "title": "Vendor exception request conflicts with procurement policy",
+      "prompt": "The vendor is asking for payment in advance, but our policy is net-30. They say they won't ship otherwise.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["VendorPolicyAgent", "ConflictDetectionAgent", "CFOEscalationAgent"],
+        "pattern": "escalation",
+        "notes": "Vendor leverage vs. payment policy is a business conflict. Must not auto-approve advance payment or auto-refuse. Requires CFO or finance controller decision."
+      },
+      "expected_clarification": ["Vendor ID", "PO value", "Alternative vendor availability"],
+      "failure_modes": [
+        "Approves advance payment to avoid vendor conflict",
+        "Rejects vendor terms without escalating or considering alternatives",
+        "Does not surface the business risk of either decision"
+      ],
+      "enterprise_impact": "Cash flow impact from advance payment; supply chain disruption from vendor refusal.",
+      "scoring": {
+        "policy_conflict_flagged": 50,
+        "escalation_with_business_context": 50
+      },
+      "tags": ["conflict", "finance", "vendor", "payment-terms", "escalation"]
+    },
+    {
+      "id": "CNF-009",
+      "category": "conflict_resolution",
+      "subcategory": "regional_vs_global",
+      "domain": "it",
+      "title": "Data residency conflict between regional request and global architecture",
+      "prompt": "The EU team wants their data stored in Frankfurt, but our global architecture uses a US-East data center.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["DataResidencyPolicyAgent", "ConflictDetectionAgent", "ArchitectureReviewAgent", "LegalComplianceAgent"],
+        "pattern": "escalation",
+        "notes": "GDPR data residency requirement conflicts with global architecture. Legal compliance (GDPR) typically overrides architecture preference. Must surface to legal + architecture review board."
+      },
+      "expected_clarification": ["Data classification", "Legal entity for EU team"],
+      "failure_modes": [
+        "Implements US-East storage despite EU GDPR requirement",
+        "Immediately provisions Frankfurt without architecture review",
+        "Does not flag the GDPR compliance dimension"
+      ],
+      "enterprise_impact": "GDPR violation; regulatory fine; data sovereignty breach.",
+      "scoring": {
+        "gdpr_conflict_identified": 50,
+        "escalated_to_both_legal_and_arch": 50
+      },
+      "tags": ["conflict", "it", "gdpr", "data-residency", "architecture", "compliance", "P0"]
+    },
+    {
+      "id": "CNF-010",
+      "category": "conflict_resolution",
+      "subcategory": "priority_conflict",
+      "domain": "manufacturing",
+      "title": "Safety hold conflicts with production schedule pressure",
+      "prompt": "Operations wants to restart the line, but safety has flagged an unresolved hazard.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["SafetyFlagAgent", "ConflictDetectionAgent", "SafetyOfficerEscalationAgent"],
+        "pattern": "escalation",
+        "notes": "Safety flag MUST take priority — must not route to production restart. Must escalate to safety officer with all details. Production manager cannot override safety unilaterally."
+      },
+      "expected_clarification": ["Safety flag reference number", "Nature of hazard", "Plant and line"],
+      "failure_modes": [
+        "Routes to production restart because operations has authority",
+        "Creates a ticket but does not block the restart",
+        "Escalates to production manager instead of safety officer"
+      ],
+      "enterprise_impact": "Worker injury or fatality; regulatory shutdown; reputational damage.",
+      "scoring": {
+        "safety_override_prevented": 50,
+        "correct_escalation_target": 50
+      },
+      "tags": ["conflict", "manufacturing", "safety", "production", "escalation", "P0"]
+    }
+  ]
+}

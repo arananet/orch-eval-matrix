@@ -1,0 +1,633 @@
+{
+  "$schema": "../schema.json",
+  "category": "clarification_required",
+  "description": "25 scenarios where the orchestrator must identify missing context and ask targeted clarifying questions before routing. Covers HR, Procurement, IT, Finance, Manufacturing, and generic ambiguous prompts.",
+  "scenarios": [
+    {
+      "id": "CLR-001",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "hr",
+      "title": "HR: Missing employee ID for leave request",
+      "prompt": "I need to submit a leave request.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["HRTriageAgent", "ClarificationAgent", "LeaveRequestAgent"],
+        "pattern": "sequential",
+        "notes": "Triage identifies missing context; ClarificationAgent collects required fields; LeaveRequestAgent submits."
+      },
+      "expected_clarification": ["Employee ID", "Leave type (vacation/sick/personal)", "Start and end dates", "Manager name for approval routing"],
+      "failure_modes": [
+        "Creates a blank leave request without required fields",
+        "Asks only for dates but not employee ID",
+        "Routes directly to LeaveRequestAgent with incomplete data"
+      ],
+      "enterprise_impact": "Leave request rejected or routed to wrong approver; HR compliance gap.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "hr", "leave", "missing-entity", "P1"]
+    },
+    {
+      "id": "CLR-002",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "hr",
+      "title": "HR: Missing coverage skills for leave planning",
+      "prompt": "Find someone to cover for me while I'm on leave.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "ShiftCoverageAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Employee ID", "Leave dates", "Shift schedule (times and days)", "Required skills or role qualifications"],
+      "failure_modes": [
+        "Searches for coverage without knowing the required skills",
+        "Returns generic availability without matching qualifications",
+        "Routes to wrong team due to missing role context"
+      ],
+      "enterprise_impact": "Incompetent shift coverage causing safety or quality incidents.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "hr", "coverage", "skills", "missing-entity"]
+    },
+    {
+      "id": "CLR-003",
+      "category": "clarification_required",
+      "subcategory": "ambiguous_scope",
+      "domain": "hr",
+      "title": "HR: Ambiguous policy region",
+      "prompt": "What's the maternity leave policy?",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "HRPolicyAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Employee's work location or legal entity (policy varies by region/jurisdiction)"],
+      "failure_modes": [
+        "Returns default US policy to a UK employee",
+        "Returns multiple conflicting policies without disambiguation",
+        "Assumes headquarters policy applies universally"
+      ],
+      "enterprise_impact": "Legal liability from communicating incorrect statutory entitlements to employees.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "hr", "policy", "regional", "compliance"]
+    },
+    {
+      "id": "CLR-004",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "hr",
+      "title": "HR: Missing manager name for approval chain",
+      "prompt": "My leave has been verbally approved. Can you process it?",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "LeaveApprovalAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Manager name and ID for formal approval record", "Leave request ID or dates", "Leave type"],
+      "failure_modes": [
+        "Processes leave as approved without formal manager confirmation",
+        "Routes to generic approval queue without manager ID",
+        "Trusts verbal approval claim without verification path"
+      ],
+      "enterprise_impact": "Audit trail gap; unauthorized leave approved; payroll discrepancy.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "hr", "approval", "audit", "missing-entity"]
+    },
+    {
+      "id": "CLR-005",
+      "category": "clarification_required",
+      "subcategory": "ambiguous_scope",
+      "domain": "hr",
+      "title": "HR: Vague performance concern",
+      "prompt": "I need to address a performance issue with someone on my team.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "HRBusinessPartnerAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Employee ID and name", "Nature of performance issue (attendance, quality, conduct)", "Whether a prior verbal warning was issued"],
+      "failure_modes": [
+        "Immediately initiates formal PIP without context",
+        "Routes to legal without assessing severity",
+        "Provides generic HR policy without understanding the situation"
+      ],
+      "enterprise_impact": "Wrongful termination exposure; escalated to legal prematurely; employee relations damage.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "hr", "performance", "sensitive", "ambiguous"]
+    },
+    {
+      "id": "CLR-006",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "procurement",
+      "title": "Procurement: Missing PO number for status check",
+      "prompt": "What's the status of my purchase order?",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "ProcurementStatusAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Purchase Order number", "Business unit (if user manages multiple BUs)"],
+      "failure_modes": [
+        "Returns all POs for the user without narrowing to a specific one",
+        "Routes to wrong ERP module without BU context",
+        "Returns 'no PO found' because no number was provided"
+      ],
+      "enterprise_impact": "Delayed procurement decisions; vendor SLA breaches from unmonitored PO status.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "procurement", "po", "missing-entity", "P1"]
+    },
+    {
+      "id": "CLR-007",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "procurement",
+      "title": "Procurement: Missing vendor for new PO creation",
+      "prompt": "Create a purchase order for office supplies.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "ProcurementCreationAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Vendor name or vendor ID", "Cost center", "Quantity and item specification", "Required delivery date"],
+      "failure_modes": [
+        "Creates PO with default vendor instead of asking",
+        "Creates PO without cost center — blocks accounting",
+        "Submits incomplete PO that is immediately rejected"
+      ],
+      "enterprise_impact": "PO rejection at approval stage; vendor confusion; budget misallocation.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "procurement", "po-creation", "vendor", "missing-entity"]
+    },
+    {
+      "id": "CLR-008",
+      "category": "clarification_required",
+      "subcategory": "ambiguous_scope",
+      "domain": "procurement",
+      "title": "Procurement: Missing business unit for escalation",
+      "prompt": "Escalate my procurement issue.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "ProcurementEscalationAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Business unit", "PO number or issue reference", "Target escalation team or person", "Issue description"],
+      "failure_modes": [
+        "Escalates to wrong BU's procurement team",
+        "Opens a blank escalation ticket without context",
+        "Routes to generic support queue instead of specialized procurement team"
+      ],
+      "enterprise_impact": "Delayed resolution; escalated to wrong team; vendor relationship damage.",
+      "scoring": {
+        "clarification_completeness": 80,
+        "no_premature_action": 20
+      },
+      "tags": ["clarification", "procurement", "escalation", "missing-entity", "P1"]
+    },
+    {
+      "id": "CLR-009",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "procurement",
+      "title": "Procurement: Missing fiscal period for spend report",
+      "prompt": "Run the procurement spend report.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "ReportingAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Report type (by vendor / category / cost center)", "Fiscal period (current month / QTD / YTD / custom range)", "Business unit"],
+      "failure_modes": [
+        "Runs YTD report when user needed current month",
+        "Runs report for all BUs when user only manages one",
+        "Generates report without selecting correct fiscal calendar"
+      ],
+      "enterprise_impact": "Bad spend decisions from incorrect period data; delayed month-end close.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "procurement", "reporting", "fiscal-period", "missing-entity"]
+    },
+    {
+      "id": "CLR-010",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "procurement",
+      "title": "Procurement: Missing cost center for budget check",
+      "prompt": "Check if I have budget available for this purchase.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "BudgetCheckAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Cost center or GL account", "Purchase amount", "Expense category"],
+      "failure_modes": [
+        "Checks budget for default cost center instead of user's",
+        "Returns aggregate budget without checking specific category",
+        "Approves without confirming the purchase amount"
+      ],
+      "enterprise_impact": "Budget overrun; unauthorized spend; audit finding at quarter close.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "procurement", "budget", "cost-center", "missing-entity"]
+    },
+    {
+      "id": "CLR-011",
+      "category": "clarification_required",
+      "subcategory": "ambiguous_system",
+      "domain": "it",
+      "title": "IT: Missing incident ID and system",
+      "prompt": "Update the incident.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ITTriageAgent", "ClarificationAgent", "IncidentManagementAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Incident ID", "Ticketing system (ServiceNow, Jira, PagerDuty, Zendesk)", "Update type (status change, comment, resolution, escalation)"],
+      "failure_modes": [
+        "Updates wrong incident in wrong system",
+        "Posts comment to ServiceNow when incident is in Jira",
+        "Asks for ID but not the system — updates wrong tool"
+      ],
+      "enterprise_impact": "Critical incident not updated; SLA breach; duplicate incident handling.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "it", "incident", "ambiguous-system", "P1"]
+    },
+    {
+      "id": "CLR-012",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "it",
+      "title": "IT: Missing environment for deployment",
+      "prompt": "Fix my deployment.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "DeploymentAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Service or application name", "Environment (production, staging, dev, QA)", "Nature of the deployment issue (failed pipeline, wrong version, config error)"],
+      "failure_modes": [
+        "Rolls back production thinking it was staging",
+        "Redeploys to wrong environment",
+        "Triggers deployment without knowing which service"
+      ],
+      "enterprise_impact": "Production outage from wrong-environment deployment; data loss from production rollback.",
+      "scoring": {
+        "clarification_completeness": 60,
+        "no_premature_action": 40
+      },
+      "tags": ["clarification", "it", "deployment", "missing-entity", "P0"]
+    },
+    {
+      "id": "CLR-013",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "it",
+      "title": "IT: Missing priority and affected services for incident",
+      "prompt": "There's an incident affecting users.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "IncidentResponseAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Affected service or system name", "Number of affected users or scope", "Severity/priority (P1/P2/P3)", "Current symptoms"],
+      "failure_modes": [
+        "Creates P3 ticket for a P1 incident",
+        "Notifies wrong on-call team due to missing service name",
+        "Opens incident without severity — delays SLA clock start"
+      ],
+      "enterprise_impact": "SLA breach; wrong team paged; delayed customer communication.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "it", "incident", "severity", "missing-entity", "P1"]
+    },
+    {
+      "id": "CLR-014",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "it",
+      "title": "IT: Missing service name for access provisioning",
+      "prompt": "Can you help with access?",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "AccessProvisioningAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["System or application name", "Access type (read, write, admin)", "User ID or email", "Business justification"],
+      "failure_modes": [
+        "Grants admin access assuming worst-case scope",
+        "Provisions access to wrong system",
+        "Routes to generic IT queue without access type context"
+      ],
+      "enterprise_impact": "Unauthorized access granted; security audit finding; least-privilege violation.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "it", "access", "security", "missing-entity", "P1"]
+    },
+    {
+      "id": "CLR-015",
+      "category": "clarification_required",
+      "subcategory": "ambiguous_scope",
+      "domain": "it",
+      "title": "IT: Vague 'system not working' report",
+      "prompt": "The system isn't doing what I expected.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "TechSupportAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["System or application name", "Expected behavior vs. actual behavior", "Steps to reproduce", "When the issue started"],
+      "failure_modes": [
+        "Opens generic ticket without reproduction steps",
+        "Assigns to wrong team (infrastructure vs. application)",
+        "Closes as 'no issue found' due to insufficient information"
+      ],
+      "enterprise_impact": "Recurring unresolved issues; developer time wasted on incomplete bug reports.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "it", "bug-report", "ambiguous", "support"]
+    },
+    {
+      "id": "CLR-016",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "finance",
+      "title": "Finance: Missing GL account and fiscal period for report",
+      "prompt": "Run the financial report.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "FinanceReportingAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Report type (P&L, balance sheet, cash flow, variance)", "Fiscal period (current month, QTD, YTD, custom)", "Business unit or cost center"],
+      "failure_modes": [
+        "Runs YTD P&L when user needed QTD cash flow",
+        "Runs report for all BUs — exposes data to unauthorized user",
+        "Generates report without confirming the fiscal calendar (calendar vs. fiscal year)"
+      ],
+      "enterprise_impact": "Incorrect management decisions from wrong-period report; regulatory reporting error.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "finance", "reporting", "missing-entity", "P1"]
+    },
+    {
+      "id": "CLR-017",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "finance",
+      "title": "Finance: Missing invoice number for processing",
+      "prompt": "My invoice doesn't look right.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "InvoiceReviewAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Invoice number", "What specifically looks wrong (amount, vendor, line items, tax)", "Expected amount if different"],
+      "failure_modes": [
+        "Opens dispute on wrong invoice",
+        "Marks invoice for generic review without logging the discrepancy",
+        "Escalates to legal without first doing invoice review"
+      ],
+      "enterprise_impact": "Incorrect payment processed; vendor dispute; audit trail gap.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "finance", "invoice", "missing-entity", "P1"]
+    },
+    {
+      "id": "CLR-018",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "finance",
+      "title": "Finance: Missing currency and GL account for journal entry",
+      "prompt": "Post a manual journal entry.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "GeneralLedgerAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Debit account (GL code)", "Credit account (GL code)", "Amount and currency", "Period (accounting month)", "Description / business justification"],
+      "failure_modes": [
+        "Posts to wrong GL period",
+        "Posts in USD when transaction is in EUR",
+        "Creates unbalanced journal entry"
+      ],
+      "enterprise_impact": "Financial statement error; SOX compliance violation; delayed period close.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "finance", "gl", "journal-entry", "sox", "missing-entity"]
+    },
+    {
+      "id": "CLR-019",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "finance",
+      "title": "Finance: Missing expense category for reimbursement",
+      "prompt": "Check if my expense was approved.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "ExpenseStatusAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Expense report ID or submission date", "Employee ID"],
+      "failure_modes": [
+        "Returns all pending expenses for the user",
+        "Checks wrong expense report",
+        "Says 'approved' based on stale cache"
+      ],
+      "enterprise_impact": "Employee reimbursement delay; financial control gap.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "finance", "expense", "approval", "missing-entity"]
+    },
+    {
+      "id": "CLR-020",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "finance",
+      "title": "Finance: Missing BU for budget variance analysis",
+      "prompt": "Show me the budget variance.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "BudgetAnalysisAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Business unit or department", "Budget period (month, quarter, YTD)", "Budget type (opex, capex)"],
+      "failure_modes": [
+        "Shows company-wide variance — exposes confidential data",
+        "Shows wrong period's variance",
+        "Returns capex when user needs opex"
+      ],
+      "enterprise_impact": "Data privacy breach; incorrect budget decisions from wrong scope.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "finance", "budget", "variance", "missing-entity"]
+    },
+    {
+      "id": "CLR-021",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "manufacturing",
+      "title": "Manufacturing: Missing plant and line for status check",
+      "prompt": "Check the production line status.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "ManufacturingMESAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Plant number or name", "Production line number", "Shift (current or specific)"],
+      "failure_modes": [
+        "Checks wrong plant's line",
+        "Returns aggregate status masking a specific line issue",
+        "Routes to wrong plant's MES system"
+      ],
+      "enterprise_impact": "Undetected line stoppage; production output shortfall; missed shipment SLA.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "manufacturing", "production", "line-status", "missing-entity", "P1"]
+    },
+    {
+      "id": "CLR-022",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "manufacturing",
+      "title": "Manufacturing: Missing batch ID for quality hold",
+      "prompt": "Put the batch on hold.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "QualityManagementAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Batch ID or lot number", "Plant and line", "Reason for hold (quality defect, regulatory, customer complaint)"],
+      "failure_modes": [
+        "Holds wrong batch — causes false shortage",
+        "Holds entire product line instead of specific batch",
+        "Creates hold without reason code — blocks release audit"
+      ],
+      "enterprise_impact": "False inventory shortage; customer order delay; regulatory non-compliance.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "manufacturing", "quality", "batch", "missing-entity", "P1"]
+    },
+    {
+      "id": "CLR-023",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "manufacturing",
+      "title": "Manufacturing: Missing maintenance type",
+      "prompt": "Schedule maintenance for the equipment.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "MaintenanceSchedulingAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Equipment ID or asset number", "Maintenance type (preventive, corrective, predictive)", "Plant and line", "Urgency (can it wait for scheduled downtime?)"],
+      "failure_modes": [
+        "Schedules corrective when preventive was intended",
+        "Schedules during peak production without urgency check",
+        "Routes to wrong maintenance crew based on missing equipment type"
+      ],
+      "enterprise_impact": "Unplanned downtime; OEE degradation; safety incident from skipped maintenance.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "manufacturing", "maintenance", "equipment", "missing-entity"]
+    },
+    {
+      "id": "CLR-024",
+      "category": "clarification_required",
+      "subcategory": "missing_entity",
+      "domain": "manufacturing",
+      "title": "Manufacturing: Missing shift for workforce allocation",
+      "prompt": "I need more workers on the line.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "WorkforceAllocationAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Plant and line number", "Shift (shift 1/2/3 or specific time window)", "Number of additional workers needed", "Required skills or certifications"],
+      "failure_modes": [
+        "Allocates workers to wrong shift",
+        "Allocates uncertified workers to safety-critical line",
+        "Requests workers from wrong plant's pool"
+      ],
+      "enterprise_impact": "Production shortfall; safety incident from unqualified worker placement.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "manufacturing", "workforce", "shift", "missing-entity"]
+    },
+    {
+      "id": "CLR-025",
+      "category": "clarification_required",
+      "subcategory": "ambiguous_scope",
+      "domain": "manufacturing",
+      "title": "Manufacturing: Vague 'material issue' report",
+      "prompt": "We have a material issue on the floor.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ClarificationAgent", "MaterialsManagementAgent"],
+        "pattern": "sequential"
+      },
+      "expected_clarification": ["Plant and line", "Material name or part number", "Issue type (shortage, quality defect, wrong material received)", "How many units affected"],
+      "failure_modes": [
+        "Triggers material replenishment when issue is a quality defect",
+        "Sends generic alert without routing to the right team (warehouse vs. quality vs. procurement)",
+        "Delays response by routing to wrong specialist"
+      ],
+      "enterprise_impact": "Line stoppage from wrong corrective action; cascade effect on downstream production.",
+      "scoring": {
+        "clarification_completeness": 70,
+        "no_premature_action": 30
+      },
+      "tags": ["clarification", "manufacturing", "materials", "ambiguous", "P1"]
+    }
+  ]
+}

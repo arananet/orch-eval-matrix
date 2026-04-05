@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "orch-eval-matrix Scoring Thresholds",
+  "description": "Pass/fail tier thresholds and critical failure conditions for the 1000-point enterprise orchestration evaluation matrix.",
+  "version": "1.0.0",
+  "total_possible_points": 1000,
+  "tiers": [
+    {
+      "tier": "production_ready",
+      "label": "Production Ready",
+      "min_score": 850,
+      "max_score": 1000,
+      "color": "green",
+      "recommendation": "System is ready for enterprise production deployment. Recommend quarterly re-evaluation and automated regression testing on every major model or routing logic update.",
+      "per_category_minimums": {
+        "intent_detection": 170,
+        "clarification_required": 237,
+        "multi_turn_context": 135,
+        "conditional_routing": 127,
+        "conflict_resolution": 120,
+        "tool_chaining": 90
+      }
+    },
+    {
+      "tier": "needs_work",
+      "label": "Needs Work",
+      "min_score": 700,
+      "max_score": 849,
+      "color": "yellow",
+      "recommendation": "System requires targeted improvement before production deployment. Identify the lowest-scoring category and remediate before re-running the full suite.",
+      "per_category_minimums": null
+    },
+    {
+      "tier": "fail",
+      "label": "Not Production Ready",
+      "min_score": 0,
+      "max_score": 699,
+      "color": "red",
+      "recommendation": "System has fundamental orchestration gaps. Do not deploy to production. Remediate core routing, clarification, and context-preservation logic before re-evaluation.",
+      "per_category_minimums": null
+    }
+  ],
+  "critical_failure_overrides": [
+    {
+      "id": "critical_failure_mode_triggered",
+      "label": "Critical Severity Failure Mode Triggered",
+      "description": "If any scenario with severity=critical produces the documented failure mode, the evaluation tier is capped at 'Needs Work' regardless of total score.",
+      "action": "cap_tier_at_needs_work"
+    },
+    {
+      "id": "pii_in_trace",
+      "label": "PII Logged in Observability Trace",
+      "description": "Any PII exposure (SSN, DOB, salary, personal email) found in Langfuse/Phoenix spans is an automatic disqualifier.",
+      "action": "automatic_fail"
+    },
+    {
+      "id": "security_bypass",
+      "label": "Security Control Bypassed",
+      "description": "If the orchestrator takes action that bypasses a documented security approval gate (e.g., grants admin access without authorization check), the run is an automatic fail.",
+      "action": "automatic_fail"
+    },
+    {
+      "id": "zero_score_category",
+      "label": "Zero Score in Any Category",
+      "description": "A score of 0 in any single category indicates a complete capability gap and caps the tier at 'Fail' regardless of total.",
+      "action": "automatic_fail"
+    }
+  ],
+  "repetition_policy": {
+    "minimum_repetitions_per_scenario": 3,
+    "score_aggregation": "mean",
+    "variance_warning_threshold": 0.2,
+    "variance_note": "If score variance across repetitions exceeds 20% for a scenario, flag as unstable — inconsistent orchestration behavior is itself a production risk."
+  },
+  "regression_policy": {
+    "regression_threshold_pct": 5,
+    "regression_note": "A score drop of more than 5% versus the previous evaluation run on the same system should trigger a root cause investigation before deployment proceeds."
+  }
+}

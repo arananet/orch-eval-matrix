@@ -1,0 +1,146 @@
+# orch-eval-matrix — Sample Run Configuration
+# Framework-agnostic configuration for evaluating any orchestration system
+# against the 75-scenario enterprise evaluation matrix.
+#
+# Copy this file, fill in your system's values, and pass it to your evaluation harness.
+# See observability/integration_guide.md for platform-specific setup.
+
+orch_eval:
+  version: "1.0.0"
+  run_id: "eval-2026-q1-my-orchestrator"   # unique ID for this run; used in observability traces
+
+  # ── Target system ──────────────────────────────────────────────────────────
+  target_system:
+    name: "my-orchestration-system"
+    # Supported frameworks: langgraph | autogen | crewai | semantic-kernel |
+    #                        dspy | haystack | agno | magentic-one | custom
+    framework: "langgraph"
+    # How to submit a scenario prompt to your system:
+    #   http_api       → POST prompt to an HTTP endpoint
+    #   function_call  → call a Python function directly
+    #   cli            → pipe prompt to a CLI command
+    #   claude_skill   → run interactively via the orch-eval Claude Code skill
+    submission_mode: "http_api"
+    endpoint: "http://localhost:8080/v1/chat"
+    auth_header: "${ORCH_API_KEY}"           # env var reference
+    timeout_ms: 15000
+    # For multi-turn scenarios: keep the session alive between turns.
+    # The harness will send turns sequentially to this session endpoint.
+    session_endpoint: "http://localhost:8080/v1/sessions"
+
+  # ── Scope ──────────────────────────────────────────────────────────────────
+  scope:
+    # Run all 75 scenarios, or narrow by category, difficulty, or ID list.
+    run_all: false
+
+    categories:
+      - intent_detection           # 10 scenarios, 200 pts
+      - clarification_required     # 25 scenarios, 250 pts
+      - multi_turn_context         # 15 scenarios, 150 pts
+      - conditional_routing        # 10 scenarios, 150 pts
+      - conflict_resolution        # 10 scenarios, 150 pts
+      - tool_chaining              # 5 scenarios,  100 pts
+
+    # Filter by difficulty. Remove a level to skip it.
+    # Options: basic | intermediate | advanced | expert
+    difficulty_filter:
+      - basic
+      - intermediate
+      - advanced
+      - expert
+
+    # To run specific scenarios only, provide their IDs here.
+    # Overrides categories + difficulty_filter if set.
+    scenario_ids: []
+
+    # Run a random sample instead of all matching scenarios.
+    # null = run all in scope.
+    sample_size: null
+
+  # ── Repetitions ────────────────────────────────────────────────────────────
+  repetitions:
+    count: 3               # minimum 3 per scoring/thresholds.json policy
+    aggregation: "mean"    # mean | min | median
+    variance_warning: 0.2  # flag scenario if score variance > 20% across reps
+
+  # ── Scoring ────────────────────────────────────────────────────────────────
+  scoring:
+    rubric_path: "scoring/rubric.json"
+    thresholds_path: "scoring/thresholds.json"
+    pass_threshold: 850
+    fail_on_critical_failure_mode: true  # one critical failure = tier capped or auto-fail
+    fail_on_pii_in_trace: true           # automatic fail if PII detected in spans
+
+  # ── Observability ──────────────────────────────────────────────────────────
+  observability:
+    enabled: true
+    # Choose one platform: langfuse | phoenix | otel | none
+    platform: "langfuse"
+
+    langfuse:
+      public_key: "${LANGFUSE_PUBLIC_KEY}"
+      secret_key: "${LANGFUSE_SECRET_KEY}"
+      host: "https://cloud.langfuse.com"
+      project: "orch-eval-my-system-2026-q1"
+      # Create a dataset for regression tracking across eval runs
+      create_dataset: true
+      dataset_name: "orch-eval-v1.0.0"
+
+    phoenix:
+      collector_endpoint: "${PHOENIX_COLLECTOR_ENDPOINT}"
+      # e.g. http://localhost:6006/v1/traces for local Phoenix
+      project: "orch-eval"
+
+    otel:
+      endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT}"
+      service_name: "orch-eval"
+      headers: {}  # add auth headers if required by your collector
+
+  # ── Output ─────────────────────────────────────────────────────────────────
+  output:
+    # Formats: json | markdown | both
+    format: "both"
+    output_dir: "./results"
+    filename_template: "eval-{run_id}-{date}.{ext}"
+    include_per_scenario_detail: true
+    include_failure_mode_analysis: true
+    include_recommendations: true
+    include_per_category_summary: true
+
+  # ── CI/CD integration ──────────────────────────────────────────────────────
+  ci_cd:
+    # Exit code 1 if total score falls below this value
+    fail_pipeline_on_score_below: 850
+    # Exit code 1 if any individual category falls below its production-ready minimum
+    fail_pipeline_on_category_below:
+      intent_detection: 170
+      clarification_required: 237
+      multi_turn_context: 135
+      conditional_routing: 127
+      conflict_resolution: 120
+      tool_chaining: 90
+    # Exit code 1 if score drops more than this % vs. previous run stored in observability
+    fail_on_regression_above_pct: 5
+
+# ── Quick-start examples ────────────────────────────────────────────────────
+# Run only clarification scenarios at basic/intermediate difficulty:
+#
+#   scope:
+#     run_all: false
+#     categories: [clarification_required]
+#     difficulty_filter: [basic, intermediate]
+#
+# Run a specific set of scenarios for a focused regression test:
+#
+#   scope:
+#     run_all: false
+#     scenario_ids: [CLR-011, CLR-012, CNF-001, CNF-002, TLC-001]
+#
+# Run all 75 scenarios with Phoenix observability:
+#
+#   scope:
+#     run_all: true
+#   observability:
+#     platform: phoenix
+#     phoenix:
+#       collector_endpoint: "http://localhost:6006/v1/traces"

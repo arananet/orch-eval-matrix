@@ -1,0 +1,270 @@
+{
+  "$schema": "../schema.json",
+  "category": "conditional_routing",
+  "description": "10 scenarios testing the orchestrator's ability to evaluate boolean logic, threshold conditions, and policy gates before routing to the appropriate agent branch.",
+  "scenarios": [
+    {
+      "id": "CND-001",
+      "category": "conditional_routing",
+      "subcategory": "threshold_gating",
+      "domain": "finance",
+      "title": "Auto-approve or escalate based on expense amount",
+      "prompt": "Approve the $15,000 expense if it's within the approval limit.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["PolicyCheckAgent", "ExpenseApprovalAgent OR FinanceEscalationAgent"],
+        "pattern": "conditional",
+        "notes": "Must check policy threshold (typically $10k for auto-approve, >$10k escalates). $15k exceeds standard limit → escalate to finance manager."
+      },
+      "expected_clarification": ["Expense category", "Cost center"],
+      "failure_modes": [
+        "Auto-approves without checking the limit",
+        "Escalates without explaining that the limit was exceeded",
+        "Hardcodes a wrong threshold"
+      ],
+      "enterprise_impact": "Unauthorized spend approval; SOX audit finding; budget overrun.",
+      "scoring": {
+        "condition_evaluated": 60,
+        "correct_branch": 40
+      },
+      "tags": ["conditional", "finance", "expense", "threshold", "approval", "P1"]
+    },
+    {
+      "id": "CND-002",
+      "category": "conditional_routing",
+      "subcategory": "boolean_logic",
+      "domain": "procurement",
+      "title": "Ship only if inventory AND vendor rating both pass",
+      "prompt": "Ship the order if inventory is above 50 units AND the vendor rating is above 4.0.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["InventoryCheckAgent", "VendorRatingAgent", "ShipmentAgent OR HoldAgent"],
+        "pattern": "conditional",
+        "notes": "Both conditions must be true for ShipmentAgent. If either fails, route to HoldAgent. Must not short-circuit on first passing condition."
+      },
+      "expected_clarification": ["Product/SKU", "Vendor ID or name"],
+      "failure_modes": [
+        "Ships if only inventory condition passes (ignores vendor rating)",
+        "Ships if only vendor rating passes (ignores inventory)",
+        "Evaluates conditions sequentially and short-circuits"
+      ],
+      "enterprise_impact": "Stockout risk or poor-quality shipment from non-compliant vendor.",
+      "scoring": {
+        "both_conditions_checked": 50,
+        "and_logic_correct": 50
+      },
+      "tags": ["conditional", "boolean-logic", "procurement", "inventory", "vendor", "P1"]
+    },
+    {
+      "id": "CND-003",
+      "category": "conditional_routing",
+      "subcategory": "threshold_gating",
+      "domain": "finance",
+      "title": "Auto-approve small expenses, escalate large ones",
+      "prompt": "If my expense is below 50 euros, approve it automatically; otherwise ask finance.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["PolicyCheckAgent", "AutoApprovalAgent OR FinanceReviewAgent"],
+        "pattern": "conditional",
+        "notes": "Threshold is €50. Below: auto-approve. At or above: escalate to finance team for review."
+      },
+      "expected_clarification": ["Expense amount", "Expense category"],
+      "failure_modes": [
+        "Always escalates regardless of amount",
+        "Always auto-approves regardless of amount",
+        "Uses wrong currency or threshold"
+      ],
+      "enterprise_impact": "Finance team overwhelmed with trivial approvals; or large expenses bypass review.",
+      "scoring": {
+        "condition_evaluated": 60,
+        "correct_branch": 40
+      },
+      "tags": ["conditional", "finance", "expense", "threshold", "auto-approve"]
+    },
+    {
+      "id": "CND-004",
+      "category": "conditional_routing",
+      "subcategory": "policy_branching",
+      "domain": "general",
+      "title": "Rebook meeting if calendar conflict detected",
+      "prompt": "If the meeting conflicts with my calendar, find the next available slot.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["CalendarCheckAgent", "MeetingBookingAgent OR SlotFinderAgent"],
+        "pattern": "conditional",
+        "notes": "Check calendar first. If conflict: find next available slot. If no conflict: book as requested."
+      },
+      "expected_clarification": ["Meeting details (time, attendees, duration)", "Employee calendar ID"],
+      "failure_modes": [
+        "Books the requested slot without checking for conflicts",
+        "Finds an alternative slot even when no conflict exists",
+        "Detects conflict but does not suggest an alternative"
+      ],
+      "enterprise_impact": "Double-booked calendar; missed meetings; executive productivity loss.",
+      "scoring": {
+        "conflict_check_performed": 50,
+        "correct_branch": 50
+      },
+      "tags": ["conditional", "calendar", "scheduling", "general"]
+    },
+    {
+      "id": "CND-005",
+      "category": "conditional_routing",
+      "subcategory": "policy_branching",
+      "domain": "customer_service",
+      "title": "Suggest alternative if product is out of stock",
+      "prompt": "If the product is out of stock, suggest an alternative with similar specs.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["InventoryCheckAgent", "OrderProcessingAgent OR ProductAlternativeAgent"],
+        "pattern": "conditional",
+        "notes": "Check stock. If available: route to OrderProcessing. If out of stock: route to ProductAlternative with spec context."
+      },
+      "expected_clarification": ["Product SKU or name"],
+      "failure_modes": [
+        "Processes order for out-of-stock item",
+        "Suggests alternative without checking availability first",
+        "Returns 'out of stock' without offering alternative"
+      ],
+      "enterprise_impact": "Failed orders; customer dissatisfaction; missed upsell opportunity.",
+      "scoring": {
+        "stock_check_performed": 50,
+        "correct_branch": 50
+      },
+      "tags": ["conditional", "inventory", "customer-service", "alternative"]
+    },
+    {
+      "id": "CND-006",
+      "category": "conditional_routing",
+      "subcategory": "policy_branching",
+      "domain": "customer_service",
+      "title": "Check goodwill exception if return window expired",
+      "prompt": "If my return window has expired, check whether a goodwill exception is possible.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["ReturnPolicyAgent", "GoodwillExceptionAgent OR DeclineAgent"],
+        "pattern": "conditional",
+        "notes": "Check return window first. If within window: standard return. If expired: evaluate goodwill exception eligibility."
+      },
+      "expected_clarification": ["Order number", "Item condition", "Reason for return"],
+      "failure_modes": [
+        "Auto-declines without checking goodwill eligibility",
+        "Grants goodwill exception without checking customer history or order details",
+        "Processes standard return for expired window"
+      ],
+      "enterprise_impact": "Customer churn from blanket refusal; revenue loss from blanket exception granting.",
+      "scoring": {
+        "policy_check_performed": 50,
+        "correct_branch": 50
+      },
+      "tags": ["conditional", "returns", "customer-service", "goodwill", "policy"]
+    },
+    {
+      "id": "CND-007",
+      "category": "conditional_routing",
+      "subcategory": "policy_branching",
+      "domain": "customer_service",
+      "title": "Escalate before responding if customer sentiment is negative",
+      "prompt": "If the customer is angry, escalate before replying.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["SentimentAnalysisAgent", "EscalationAgent OR ResponseAgent"],
+        "pattern": "conditional",
+        "notes": "Must assess sentiment first. Negative/angry: escalate to human agent or senior support before any automated response. Neutral/positive: proceed with automated response."
+      },
+      "expected_clarification": ["Customer message or conversation transcript"],
+      "failure_modes": [
+        "Sends automated response to angry customer before escalating",
+        "Escalates all customers regardless of sentiment",
+        "Does not perform sentiment check"
+      ],
+      "enterprise_impact": "Escalated customer receives tone-deaf automated response; churn risk; social media incident.",
+      "scoring": {
+        "sentiment_evaluated": 50,
+        "correct_branch": 50
+      },
+      "tags": ["conditional", "customer-service", "sentiment", "escalation", "NLP"]
+    },
+    {
+      "id": "CND-008",
+      "category": "conditional_routing",
+      "subcategory": "policy_branching",
+      "domain": "general",
+      "title": "Proceed or explain based on policy check",
+      "prompt": "If the policy allows it, proceed; if not, explain the restriction.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["PolicyCheckAgent", "ActionExecutionAgent OR PolicyExplanationAgent"],
+        "pattern": "conditional",
+        "notes": "Must query policy first. If allowed: execute action. If not: provide clear explanation citing policy rule."
+      },
+      "expected_clarification": ["Action being requested", "User role and jurisdiction"],
+      "failure_modes": [
+        "Executes action without policy check",
+        "Blocks action without explaining why",
+        "Returns generic 'not allowed' without citing specific policy rule"
+      ],
+      "enterprise_impact": "Policy violation from skipped check; user friction from unexplained block.",
+      "scoring": {
+        "policy_check_performed": 50,
+        "correct_branch": 30,
+        "explanation_quality": 20
+      },
+      "tags": ["conditional", "policy", "compliance", "general"]
+    },
+    {
+      "id": "CND-009",
+      "category": "conditional_routing",
+      "subcategory": "threshold_gating",
+      "domain": "finance",
+      "title": "Recalculate and resend invoice if total changed",
+      "prompt": "If the invoice total changed, recalculate the tax and resend it.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["InvoiceComparisonAgent", "TaxCalculationAgent", "InvoiceSendAgent"],
+        "pattern": "conditional",
+        "notes": "Compare current vs. previous invoice total. If changed: recalculate tax → resend. If unchanged: no action needed."
+      },
+      "expected_clarification": ["Invoice number", "Previous invoice version or amount"],
+      "failure_modes": [
+        "Resends invoice without recalculating tax",
+        "Recalculates tax even when total is unchanged",
+        "Does not detect that total changed"
+      ],
+      "enterprise_impact": "Incorrect tax invoiced; vendor payment dispute; VAT compliance issue.",
+      "scoring": {
+        "change_detected": 40,
+        "tax_recalculated": 30,
+        "conditional_send": 30
+      },
+      "tags": ["conditional", "finance", "invoice", "tax", "threshold"]
+    },
+    {
+      "id": "CND-010",
+      "category": "conditional_routing",
+      "subcategory": "policy_branching",
+      "domain": "it",
+      "title": "Route to specialist if first-line agent cannot resolve",
+      "prompt": "If the first agent cannot solve it, route to the specialist team.",
+      "turns": null,
+      "expected_routing": {
+        "agents": ["L1SupportAgent", "SpecialistTeamAgent"],
+        "pattern": "conditional",
+        "notes": "L1 attempts resolution. If resolution confidence below threshold or explicit failure signal: route to specialist with full context."
+      },
+      "expected_clarification": ["Issue description", "System affected"],
+      "failure_modes": [
+        "Immediately routes to specialist without L1 attempt",
+        "L1 fails but does not trigger specialist routing",
+        "Routes to specialist but without passing L1 context and steps tried"
+      ],
+      "enterprise_impact": "Specialist time wasted on L1-level issues; or unresolved critical issues stuck at L1.",
+      "scoring": {
+        "l1_attempted_first": 40,
+        "conditional_escalation": 40,
+        "context_passed": 20
+      },
+      "tags": ["conditional", "it", "escalation", "support", "tiered-routing"]
+    }
+  ]
+}

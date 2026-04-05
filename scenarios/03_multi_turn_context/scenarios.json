@@ -1,0 +1,694 @@
+{
+  "$schema": "../schema.json",
+  "category": "multi_turn_context",
+  "description": "15 scenarios testing the orchestrator's ability to preserve, update, and correctly apply context across multiple conversation turns. Scenarios include context carryover, context modification, policy evolution, escalation chains, and partial completion flows.",
+  "scenarios": [
+    {
+      "id": "MTX-001",
+      "category": "multi_turn_context",
+      "subcategory": "context_carryover",
+      "domain": "manufacturing",
+      "title": "Plant context retained across turns",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "I'm working at Plant 3.",
+          "expected_state": {
+            "plant": "Plant 3"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "Check the status of line 2.",
+          "expected_state": {
+            "plant": "Plant 3",
+            "line": "2",
+            "action": "line_status_check"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "ManufacturingMESAgent"],
+        "pattern": "sequential",
+        "notes": "Turn 2 must use Plant 3 from turn 1. Querying line 2 at Plant 3, not a default or unknown plant."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Checks line 2 without specifying Plant 3 — returns wrong line",
+        "Asks 'which plant?' on turn 2 — context was already provided",
+        "Checks line 2 at default plant (Plant 1)"
+      ],
+      "enterprise_impact": "Wrong production line monitored; undetected stoppage at actual plant.",
+      "scoring": {
+        "context_retained": 60,
+        "correct_routing": 40
+      },
+      "tags": ["multi-turn", "context-carryover", "manufacturing", "plant", "P1"]
+    },
+    {
+      "id": "MTX-002",
+      "category": "multi_turn_context",
+      "subcategory": "context_modification",
+      "domain": "travel",
+      "title": "Travel destination updated mid-conversation",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "I need to book travel to Berlin for next Monday.",
+          "expected_state": {
+            "destination": "Berlin",
+            "date": "next Monday",
+            "action": "pending_booking"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "Actually, change it to Madrid instead.",
+          "expected_state": {
+            "destination": "Madrid",
+            "date": "next Monday",
+            "action": "pending_booking"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "TravelBookingAgent"],
+        "pattern": "sequential",
+        "notes": "Context must update destination to Madrid and retain the date. Must NOT book both Berlin and Madrid."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Books both Berlin and Madrid — double booking",
+        "Forgets the date from turn 1 and asks again",
+        "Acknowledges change but still books Berlin"
+      ],
+      "enterprise_impact": "Double booking cost; traveler arrives at wrong city.",
+      "scoring": {
+        "context_updated": 70,
+        "no_duplicate_booking": 30
+      },
+      "tags": ["multi-turn", "context-modification", "travel", "booking"]
+    },
+    {
+      "id": "MTX-003",
+      "category": "multi_turn_context",
+      "subcategory": "context_carryover",
+      "domain": "travel",
+      "title": "Location context used for hotel search",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "I'm traveling to Madrid next week for a conference.",
+          "expected_state": {
+            "destination": "Madrid",
+            "purpose": "conference",
+            "timeframe": "next week"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "Book something near the center.",
+          "expected_state": {
+            "destination": "Madrid",
+            "purpose": "conference",
+            "timeframe": "next week",
+            "location_preference": "city center",
+            "action": "hotel_search"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "HotelSearchAgent"],
+        "pattern": "sequential",
+        "notes": "Must search for hotels in Madrid city center for next week. Destination must be carried from turn 1."
+      },
+      "expected_clarification": ["Check-in and check-out dates"],
+      "failure_modes": [
+        "Asks 'where are you traveling?' — context was already provided",
+        "Searches globally for 'city center hotels' without Madrid context",
+        "Books hotel without confirming dates"
+      ],
+      "enterprise_impact": "Wrong hotel location booked; employee inconvenience and travel policy non-compliance.",
+      "scoring": {
+        "context_retained": 60,
+        "correct_routing": 40
+      },
+      "tags": ["multi-turn", "context-carryover", "travel", "hotel"]
+    },
+    {
+      "id": "MTX-004",
+      "category": "multi_turn_context",
+      "subcategory": "context_modification",
+      "domain": "hr",
+      "title": "Leave date modified after manager approval noted",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "My manager has approved my leave request for this Thursday.",
+          "expected_state": {
+            "leave_date": "this Thursday",
+            "approval_status": "manager_approved"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "Move it to Friday instead.",
+          "expected_state": {
+            "leave_date": "this Friday",
+            "approval_status": "pending_reapproval",
+            "action": "update_leave_request"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "LeaveManagementAgent"],
+        "pattern": "sequential",
+        "notes": "Date change requires updated manager approval. Must not retain Thursday date. Must flag that new date needs re-approval."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Updates to Friday but marks as already approved — skips re-approval",
+        "Keeps Thursday in the system despite user changing to Friday",
+        "Processes Friday leave as a new separate request instead of modification"
+      ],
+      "enterprise_impact": "Leave taken on wrong date; approval chain bypassed on date change.",
+      "scoring": {
+        "context_updated": 60,
+        "approval_reset": 40
+      },
+      "tags": ["multi-turn", "context-modification", "hr", "leave", "approval"]
+    },
+    {
+      "id": "MTX-005",
+      "category": "multi_turn_context",
+      "subcategory": "context_carryover",
+      "domain": "travel",
+      "title": "Select cheaper of two known flights",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "I have two flights booked: LH4402 at €320 and IB3310 at €210.",
+          "expected_state": {
+            "flights": [
+              {"id": "LH4402", "price": 320, "currency": "EUR"},
+              {"id": "IB3310", "price": 210, "currency": "EUR"}
+            ]
+          }
+        },
+        {
+          "turn": 2,
+          "user": "Cancel the cheaper one.",
+          "expected_state": {
+            "cancel_flight": "IB3310",
+            "action": "flight_cancellation"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "FlightCancellationAgent"],
+        "pattern": "sequential",
+        "notes": "Must identify IB3310 as cheaper (€210 vs €320) from context and cancel it specifically."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Asks 'which flight?' — data was provided in turn 1",
+        "Cancels the wrong flight (LH4402)",
+        "Cancels both flights"
+      ],
+      "enterprise_impact": "Wrong flight cancelled; traveler stranded; airline penalty fees on wrong ticket.",
+      "scoring": {
+        "context_retained": 50,
+        "correct_selection": 50
+      },
+      "tags": ["multi-turn", "context-carryover", "travel", "flight", "reasoning"]
+    },
+    {
+      "id": "MTX-006",
+      "category": "multi_turn_context",
+      "subcategory": "context_carryover",
+      "domain": "finance",
+      "title": "Corporate card preference retained for expense",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "My account is for work, not personal.",
+          "expected_state": {
+            "account_type": "corporate",
+            "payment_method": "corporate_card"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "Process the expense claim.",
+          "expected_state": {
+            "account_type": "corporate",
+            "payment_method": "corporate_card",
+            "action": "expense_processing"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "ExpenseProcessingAgent"],
+        "pattern": "sequential",
+        "notes": "Expense must route to corporate card, not personal account. Account type from turn 1 must be retained."
+      },
+      "expected_clarification": ["Expense amount", "Expense category", "Receipt or reference"],
+      "failure_modes": [
+        "Routes expense to personal account",
+        "Asks 'corporate or personal?' — answered in turn 1",
+        "Ignores account type context entirely"
+      ],
+      "enterprise_impact": "Personal card charged for corporate expense; reimbursement delay; tax reporting error.",
+      "scoring": {
+        "context_retained": 60,
+        "correct_routing": 40
+      },
+      "tags": ["multi-turn", "context-carryover", "finance", "expense", "corporate"]
+    },
+    {
+      "id": "MTX-007",
+      "category": "multi_turn_context",
+      "subcategory": "context_carryover",
+      "domain": "customer_service",
+      "title": "Existing support contact referenced in follow-up",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "The item I ordered arrived damaged.",
+          "expected_state": {
+            "issue": "damaged_item",
+            "action": "awaiting_next_step"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "I already emailed support about it last Tuesday.",
+          "expected_state": {
+            "issue": "damaged_item",
+            "prior_contact": "email",
+            "contact_date": "last Tuesday",
+            "action": "check_existing_ticket"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "CustomerSupportLookupAgent"],
+        "pattern": "sequential",
+        "notes": "Must search for existing support ticket from last Tuesday before creating a new one. Prior contact context must be used."
+      },
+      "expected_clarification": ["Order number"],
+      "failure_modes": [
+        "Creates a new duplicate support ticket",
+        "Ignores the prior contact information",
+        "Asks 'have you contacted support before?' — answered in turn 2"
+      ],
+      "enterprise_impact": "Duplicate tickets increase support workload; customer frustrated by repeating the issue.",
+      "scoring": {
+        "context_retained": 60,
+        "no_duplicate_ticket": 40
+      },
+      "tags": ["multi-turn", "context-carryover", "customer-service", "support", "deduplication"]
+    },
+    {
+      "id": "MTX-008",
+      "category": "multi_turn_context",
+      "subcategory": "context_modification",
+      "domain": "travel",
+      "title": "Hotel nights extended if price delta is acceptable",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "I need a hotel room for three nights in Frankfurt.",
+          "expected_state": {
+            "destination": "Frankfurt",
+            "nights": 3,
+            "action": "hotel_search"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "Actually make it four nights if the price difference is small.",
+          "expected_state": {
+            "destination": "Frankfurt",
+            "nights_preferred": 4,
+            "nights_fallback": 3,
+            "price_condition": "small_difference",
+            "action": "conditional_hotel_search"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "HotelSearchAgent", "PriceComparisonAgent"],
+        "pattern": "conditional",
+        "notes": "Must compare 3-night vs 4-night price. Book 4 nights only if difference is within acceptable threshold. Must not ignore the condition."
+      },
+      "expected_clarification": ["What 'small price difference' means (e.g., under €50?)"],
+      "failure_modes": [
+        "Books 4 nights without checking price difference",
+        "Ignores the modification and books 3 nights",
+        "Cannot evaluate 'small' without asking — but fails to ask"
+      ],
+      "enterprise_impact": "Overspend on hotel; travel policy violation from unapproved extension.",
+      "scoring": {
+        "context_updated": 40,
+        "conditional_evaluation": 40,
+        "clarification_completeness": 20
+      },
+      "tags": ["multi-turn", "context-modification", "travel", "conditional", "hotel"]
+    },
+    {
+      "id": "MTX-009",
+      "category": "multi_turn_context",
+      "subcategory": "policy_evolution",
+      "domain": "hr",
+      "title": "Regional policy change mid-session",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "I need to check expense limits. I'm based in North America.",
+          "expected_state": {
+            "region": "North America",
+            "policy_context": "NA_expense_policy"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "I'm actually in Europe this month — does the NA policy still apply?",
+          "expected_state": {
+            "region": "Europe",
+            "original_region": "North America",
+            "policy_question": "which_policy_applies_while_traveling",
+            "action": "policy_lookup"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "HRPolicyAgent"],
+        "pattern": "sequential",
+        "notes": "Must handle the policy conflict: home region (NA) vs. current location (EU). Policy agent must address which applies for traveling employees."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Continues using NA policy without addressing the EU question",
+        "Switches entirely to EU policy without noting the home-region nuance",
+        "Loses the original NA context and treats user as EU-based"
+      ],
+      "enterprise_impact": "Incorrect expense reimbursement; policy compliance violation for traveling employee.",
+      "scoring": {
+        "context_retained": 40,
+        "policy_conflict_handled": 60
+      },
+      "tags": ["multi-turn", "policy-evolution", "hr", "regional", "expense", "travel"]
+    },
+    {
+      "id": "MTX-010",
+      "category": "multi_turn_context",
+      "subcategory": "context_modification",
+      "domain": "general",
+      "title": "Budget constraint added after simplicity preference",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "I want the simplest option.",
+          "expected_state": {
+            "preference": "simplest",
+            "constraint": null
+          }
+        },
+        {
+          "turn": 2,
+          "user": "But make sure it's under budget too.",
+          "expected_state": {
+            "preference": "simplest",
+            "constraint": "under_budget",
+            "action": "refine_recommendation"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "RecommendationAgent"],
+        "pattern": "sequential",
+        "notes": "Must apply BOTH constraints: simplest option that is also within budget. Must not drop the 'simplest' preference."
+      },
+      "expected_clarification": ["Budget amount or limit"],
+      "failure_modes": [
+        "Recommends cheapest option ignoring 'simplest' preference",
+        "Recommends simplest option ignoring budget constraint",
+        "Treats turn 2 as a completely new request"
+      ],
+      "enterprise_impact": "Recommendation misalignment; user picks wrong option leading to rework.",
+      "scoring": {
+        "context_retained": 50,
+        "both_constraints_applied": 50
+      },
+      "tags": ["multi-turn", "context-modification", "general", "recommendation", "constraint"]
+    },
+    {
+      "id": "MTX-011",
+      "category": "multi_turn_context",
+      "subcategory": "context_carryover",
+      "domain": "customer_service",
+      "title": "VIP flag retained and delay not mentioned",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "This is for a VIP customer — handle with priority.",
+          "expected_state": {
+            "customer_tier": "VIP",
+            "handling": "priority",
+            "communication_constraint": "do_not_mention_delay"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "Draft a response about the shipment status.",
+          "expected_state": {
+            "customer_tier": "VIP",
+            "action": "draft_response",
+            "constraint": "omit_delay_information"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "CustomerCommunicationAgent"],
+        "pattern": "sequential",
+        "notes": "Draft must reflect VIP tone and must NOT mention the delay, as the VIP handling instruction from turn 1 applies."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Drafts generic response ignoring VIP status",
+        "Mentions the delay — violates explicit constraint from turn 1",
+        "Drops VIP context when moving to drafting task"
+      ],
+      "enterprise_impact": "VIP customer relationship damaged; escalation risk; revenue loss.",
+      "scoring": {
+        "vip_context_retained": 50,
+        "constraint_respected": 50
+      },
+      "tags": ["multi-turn", "context-carryover", "customer-service", "vip", "communication"]
+    },
+    {
+      "id": "MTX-012",
+      "category": "multi_turn_context",
+      "subcategory": "context_carryover",
+      "domain": "general",
+      "title": "Repeat previous task with fresh data",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "Summarize the top 5 open purchase orders.",
+          "expected_state": {
+            "task": "summarize_top_5_pos",
+            "data_version": "at_turn_1"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "The first answer was wrong. Now do the same thing, but with the latest data.",
+          "expected_state": {
+            "task": "summarize_top_5_pos",
+            "data_version": "latest",
+            "retry": true
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "ProcurementDataAgent"],
+        "pattern": "sequential",
+        "notes": "Must re-execute the same task (top 5 open POs) but force a fresh data fetch. Must not re-use cached result from turn 1."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Returns same (cached) result from turn 1",
+        "Forgets the task definition and asks 'what did you want summarized?'",
+        "Fetches latest data but changes the task scope"
+      ],
+      "enterprise_impact": "Decision made on stale data; procurement manager acts on incorrect PO list.",
+      "scoring": {
+        "task_retained": 50,
+        "fresh_data_fetched": 50
+      },
+      "tags": ["multi-turn", "context-carryover", "procurement", "data-freshness", "retry"]
+    },
+    {
+      "id": "MTX-013",
+      "category": "multi_turn_context",
+      "subcategory": "policy_evolution",
+      "domain": "finance",
+      "title": "Policy jurisdiction updated mid-session",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "Apply the North America expense policy to my request.",
+          "expected_state": {
+            "policy": "NA_expense_policy",
+            "region": "North America"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "Now I'm in EU — use the European policy from here on.",
+          "expected_state": {
+            "policy": "EU_expense_policy",
+            "region": "EU",
+            "policy_switch_acknowledged": true
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "ExpensePolicyAgent"],
+        "pattern": "sequential",
+        "notes": "Must switch to EU policy immediately and apply it to all subsequent requests. Must not continue applying NA policy."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Continues applying NA policy after the switch instruction",
+        "Applies EU policy to turn 1 retroactively",
+        "Does not acknowledge the policy switch"
+      ],
+      "enterprise_impact": "Non-compliant expense claims submitted under wrong policy; audit finding.",
+      "scoring": {
+        "policy_switched": 60,
+        "no_retroactive_change": 40
+      },
+      "tags": ["multi-turn", "policy-evolution", "finance", "expense", "regional"]
+    },
+    {
+      "id": "MTX-014",
+      "category": "multi_turn_context",
+      "subcategory": "escalation_chain",
+      "domain": "it",
+      "title": "Help desk to specialist escalation over multiple turns",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "I need help — my VPN isn't connecting.",
+          "expected_state": {
+            "issue": "vpn_connection_failure",
+            "tier": "L1_helpdesk",
+            "action": "initial_triage"
+          }
+        },
+        {
+          "turn": 2,
+          "user": "I tried the steps and it's still broken.",
+          "expected_state": {
+            "issue": "vpn_connection_failure",
+            "steps_attempted": true,
+            "tier": "L2_network",
+            "action": "escalate"
+          }
+        },
+        {
+          "turn": 3,
+          "user": "It's urgent — I have a client call in 20 minutes.",
+          "expected_state": {
+            "issue": "vpn_connection_failure",
+            "urgency": "high",
+            "tier": "L2_network",
+            "sla": "20_minutes",
+            "action": "priority_escalation"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["L1HelpdeskAgent", "L2NetworkAgent"],
+        "pattern": "escalation",
+        "notes": "Turn 1: L1 triage. Turn 2: escalate to L2 with full issue context. Turn 3: mark as urgent and add time constraint to L2 ticket."
+      },
+      "expected_clarification": ["Employee ID", "Device type"],
+      "failure_modes": [
+        "Resets context and re-triages on turn 2",
+        "Does not pass issue history to L2 — L2 starts from scratch",
+        "Ignores urgency in turn 3 — does not update priority"
+      ],
+      "enterprise_impact": "Employee misses client call; SLA breach; customer impact.",
+      "scoring": {
+        "escalation_with_context": 60,
+        "urgency_applied": 40
+      },
+      "tags": ["multi-turn", "escalation-chain", "it", "vpn", "urgency", "P1"]
+    },
+    {
+      "id": "MTX-015",
+      "category": "multi_turn_context",
+      "subcategory": "partial_completion",
+      "domain": "procurement",
+      "title": "Resume PO processing after partial completion",
+      "prompt": null,
+      "turns": [
+        {
+          "turn": 1,
+          "user": "Check the status of PO-1001, PO-1002, and PO-1003.",
+          "expected_state": {
+            "pos_requested": ["PO-1001", "PO-1002", "PO-1003"],
+            "completed": [],
+            "remaining": ["PO-1001", "PO-1002", "PO-1003"]
+          }
+        },
+        {
+          "turn": 2,
+          "user": "PO-1001 has been resolved. Now process PO-1002.",
+          "expected_state": {
+            "pos_requested": ["PO-1001", "PO-1002", "PO-1003"],
+            "completed": ["PO-1001"],
+            "remaining": ["PO-1002", "PO-1003"],
+            "current": "PO-1002",
+            "action": "process_po_1002"
+          }
+        }
+      ],
+      "expected_routing": {
+        "agents": ["ContextManagerAgent", "ProcurementStatusAgent"],
+        "pattern": "sequential",
+        "notes": "Must track the three-PO list from turn 1. On turn 2, mark PO-1001 complete and process PO-1002. PO-1003 must remain in the queue."
+      },
+      "expected_clarification": [],
+      "failure_modes": [
+        "Forgets PO-1003 is still pending",
+        "Reprocesses PO-1001 (already resolved)",
+        "Treats turn 2 as a standalone request for PO-1002 without list context"
+      ],
+      "enterprise_impact": "PO-1003 falls through the cracks; vendor not paid on time; procurement SLA breach.",
+      "scoring": {
+        "list_state_maintained": 60,
+        "correct_current_action": 40
+      },
+      "tags": ["multi-turn", "partial-completion", "procurement", "po", "stateful"]
+    }
+  ]
+}

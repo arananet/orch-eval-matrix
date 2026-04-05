@@ -1,0 +1,172 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/arananet/orch-eval-matrix/scenarios/schema.json",
+  "title": "Orchestration Evaluation Scenario",
+  "description": "Schema for enterprise orchestration evaluation scenarios in the orch-eval-matrix framework",
+  "type": "object",
+  "required": ["id", "category", "subcategory", "domain", "prompt", "expected_routing", "expected_clarification", "failure_modes", "enterprise_impact", "scoring", "tags"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique scenario identifier. Format: {PREFIX}-{NNN} e.g. INT-001, CLR-012",
+      "pattern": "^(INT|CLR|MTX|CND|CNF|TLC)-\\d{3}$"
+    },
+    "category": {
+      "type": "string",
+      "description": "Top-level evaluation category",
+      "enum": [
+        "intent_detection",
+        "clarification_required",
+        "multi_turn_context",
+        "conditional_routing",
+        "conflict_resolution",
+        "tool_chaining"
+      ]
+    },
+    "subcategory": {
+      "type": "string",
+      "description": "Fine-grained classification within the category",
+      "examples": [
+        "multi_intent_parallel",
+        "multi_intent_sequential",
+        "multi_intent_conditional",
+        "missing_entity",
+        "ambiguous_system",
+        "ambiguous_scope",
+        "context_carryover",
+        "context_modification",
+        "policy_evolution",
+        "escalation_chain",
+        "partial_completion",
+        "threshold_gating",
+        "boolean_logic",
+        "policy_branching",
+        "priority_conflict",
+        "policy_conflict",
+        "regional_vs_global",
+        "multi_tool_sequential",
+        "multi_tool_parallel"
+      ]
+    },
+    "domain": {
+      "type": "string",
+      "description": "Enterprise domain the scenario belongs to",
+      "enum": [
+        "procurement",
+        "hr",
+        "it",
+        "finance",
+        "manufacturing",
+        "sales",
+        "customer_service",
+        "travel",
+        "general"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "description": "Short human-readable title for the scenario"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "The single-turn user prompt. For multi-turn scenarios use the 'turns' field instead. Set to null for multi-turn scenarios."
+    },
+    "turns": {
+      "type": ["array", "null"],
+      "description": "Ordered list of conversation turns for multi-turn scenarios. Null for single-turn scenarios.",
+      "items": {
+        "type": "object",
+        "required": ["turn", "user"],
+        "properties": {
+          "turn": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "user": {
+            "type": "string",
+            "description": "User utterance for this turn"
+          },
+          "expected_state": {
+            "type": "object",
+            "description": "Expected context state the orchestrator should maintain after this turn",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "expected_routing": {
+      "type": "object",
+      "description": "The correct orchestration decision for this scenario",
+      "required": ["agents", "pattern"],
+      "properties": {
+        "agents": {
+          "type": "array",
+          "description": "Ordered or unordered list of agents/tools to invoke",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "pattern": {
+          "type": "string",
+          "description": "How agents should be invoked",
+          "enum": ["parallel", "sequential", "conditional", "escalation", "chain", "fanout"]
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional routing notes or conditions"
+        }
+      }
+    },
+    "expected_clarification": {
+      "type": "array",
+      "description": "List of missing pieces of information the orchestrator must ask for before proceeding. Empty array means no clarification needed.",
+      "items": { "type": "string" }
+    },
+    "failure_modes": {
+      "type": "array",
+      "description": "Common incorrect behaviors an orchestration system might exhibit",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "enterprise_impact": {
+      "type": "string",
+      "description": "Real-world business consequence if the orchestrator fails this scenario"
+    },
+    "scoring": {
+      "type": "object",
+      "description": "Point breakdown for evaluating this scenario. Values must sum to 100.",
+      "minProperties": 2,
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
+      }
+    },
+    "tags": {
+      "type": "array",
+      "description": "Searchable tags for filtering and reporting",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "observability_hints": {
+      "type": "object",
+      "description": "Optional hints for observability tooling when running this scenario",
+      "properties": {
+        "expected_spans": {
+          "type": "integer",
+          "description": "Minimum number of spans expected in a trace for this scenario"
+        },
+        "key_attributes": {
+          "type": "array",
+          "description": "OpenTelemetry span attributes to assert on",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "if": {
+    "properties": { "turns": { "type": "null" } }
+  },
+  "then": {
+    "required": ["prompt"]
+  }
+}
