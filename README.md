@@ -230,19 +230,32 @@ This matrix is framework-agnostic. It has been designed with the following patte
 | **LangGraph 0.3+** | Stateful DAG with persistent checkpointing. Nodes are agents; edges encode routing logic. Supports supervisor, hierarchical, and swarm topologies. | MTX-* (checkpointed state), CND-* (edge conditions), TLC-* (node chains) |
 | **LangGraph Multi-Agent** | Supervisor agent delegates to specialized sub-agents. Sub-agents report back; supervisor decides next step. | INT-* (supervisor decomposition), CNF-* (supervisor conflict arbitration) |
 
-### Role-Based / Collaborative Orchestrators
+### Microsoft Orchestration Stack
 
 | Framework | Pattern | Key Eval Scenarios |
 |---|---|---|
-| **AutoGen 0.4+ / Magentic-One** | Orchestrator + Ledger pattern. Orchestrator maintains a task ledger; agents report progress. Supports parallel agent execution with dynamic re-planning. | INT-* (parallel dispatch), MTX-* (ledger-based context), CNF-* (orchestrator arbitration) |
+| **Microsoft Agent Framework** | Enterprise-grade multi-agent orchestration built on Azure AI Foundry. Supports hierarchical agent topologies with a central orchestrator delegating to domain-specific sub-agents. Native integration with Azure services, policy enforcement, and enterprise identity. | INT-* (supervisor decomposition), CNF-* (policy conflict escalation), CND-* (Azure policy gating) |
+| **Semantic Kernel** | Planner-based orchestration (Handlebars, Stepwise) that generates an execution plan from user intent. Sequential or parallel plan execution with step-level tool calls. Deeply integrated with Microsoft 365 and Copilot workflows. | INT-* (planner intent decomposition), TLC-* (stepwise tool chains), CLR-* (planner clarification requests) |
+
+### Cloud-Managed Orchestrators
+
+| Framework | Pattern | Key Eval Scenarios |
+|---|---|---|
+| **Amazon Q (Quick) Orchestration** | Supervisor-specialist routing architecture. A central supervisor agent intelligently routes requests to domain-specialized sub-agents (product, order, support). Supports three handoff modes: **Handoff** (synchronous, wait for result), **Assign** (asynchronous parallel), **Flow** (scheduled). Conditional routing bypasses full orchestration for simple requests. HITL built in via case management. | INT-* (supervisor intent routing), CND-* (conditional handoff mode selection), MTX-* (multi-turn context across sub-agents), CNF-* (HITL case management) |
+
+### Open-Source / Community Orchestrators
+
+| Framework | Pattern | Key Eval Scenarios |
+|---|---|---|
+| **BeeAI** (Linux Foundation) | Hierarchical workflow nesting with declarative YAML-based multi-agent composition. Coordinator agent combines results from specialized agents. Supports parallelism, retries, and replanning via **RequirementAgent** pattern — rule-based constraints ensure reliability without sacrificing flexibility. Pluggable memory backends (unbounded, summarized, token-controlled) for cross-session state. Python + TypeScript. | MTX-* (pluggable memory, cross-session state), TLC-* (nested workflow chains), CND-* (declarative conditional execution), CNF-* (coordinator arbitration) |
 | **CrewAI** | Crew of role-defined agents with sequential or hierarchical process. Manager LLM routes tasks based on agent roles. | CLR-* (manager role requests clarification), INT-* (crew task decomposition) |
+| **Agno** | Lightweight agents as typed Python functions with structured I/O. Zero framework overhead; maximum composability. Orchestrator calls agents like function calls. | TLC-* (function chain context), INT-* (function dispatch) |
 
 ### Declarative / DSL Orchestrators
 
 | Framework | Pattern | Key Eval Scenarios |
 |---|---|---|
-| **Semantic Kernel (Planner)** | Handlebars or Stepwise Planner generates a plan from intent. Sequential plan execution with step-level tool calls. | INT-* (planner intent decomposition), TLC-* (stepwise tool chains) |
-| **DSPy** | Declarative signatures + compiled optimization. Routing logic is a learned module. | CND-* (compiled conditional routing), INT-* (signature-based intent classification) |
+| **DSPy** | Declarative signatures + compiled optimization. Routing logic is a learned module optimized via feedback. | CND-* (compiled conditional routing), INT-* (signature-based intent classification) |
 | **Haystack Pipelines** | DAG of components (nodes). Routers branch flow based on output scores or metadata. | CND-* (branch nodes), TLC-* (pipeline chains) |
 
 ### Emerging 2025–2026 Patterns
