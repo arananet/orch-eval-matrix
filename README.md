@@ -8,6 +8,25 @@
 ![Framework Agnostic](https://img.shields.io/badge/framework-agnostic-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
+---
+
+## The Purpose of an Orchestrator
+
+> **Divide the problem into smaller pieces → locate the right agent per domain → manage context precisely → use frontier models only when necessary, delegating the rest to SLMs.**
+
+An orchestrator's job is not to answer questions. It is to:
+
+1. **Decompose** — break a complex user request into the smallest independently solvable sub-problems
+2. **Route** — direct each sub-problem to the agent or model with the right domain expertise
+3. **Manage context** — carry exactly the right information between steps, no more, no less
+4. **Minimize frontier model usage** — reserve expensive large models for strategic reasoning and conflict resolution; let small language models (SLMs) handle routine domain execution
+
+When orchestration is done correctly, frontier model calls drop to a fraction of the total compute. Most of the work — the domain lookups, policy checks, data retrieval, routine approvals — is handled by cheaper, faster, purpose-built SLMs. The orchestrator is the intelligence that makes this cost-efficient delegation possible without sacrificing correctness.
+
+**This matrix evaluates whether your orchestrator actually does this.** A system that routes everything to a single frontier model is not an orchestrator — it is an expensive wrapper. The scenarios in this matrix are designed to expose exactly that failure mode.
+
+---
+
 75 production-grade scenarios to validate:
 
 - Multi-intent decomposition & parallel routing
@@ -303,6 +322,12 @@ Scenario schema fields:
 ---
 
 ## Design Principles
+
+**Decomposition-first evaluation.** Every INT-* scenario tests whether the orchestrator breaks a complex prompt into the right sub-problems before routing. A system that sends the full prompt to one agent fails these scenarios — even if it gets the right answer.
+
+**Domain routing accuracy.** Each scenario has an expected domain agent. Routing a finance problem to a general-purpose LLM when a Finance Agent exists is a failure, not a partial credit. The rubric penalises over-reliance on frontier models for tasks that belong to a domain SLM.
+
+**Context efficiency.** The MTX-* scenarios test not just whether context is *retained*, but whether the orchestrator carries it efficiently — passing the minimum necessary state to each downstream agent rather than replaying the full conversation history.
 
 **Framework-agnostic by design.** Scenarios are pure JSON. Any evaluation harness in any language can consume them. The scoring rubric is explicit enough to minimize inter-rater variance.
 
