@@ -12,11 +12,16 @@
       "prompt": "Cancel my procurement PO and check current inventory levels for those items.",
       "turns": null,
       "expected_routing": {
-        "agents": ["ProcurementAgent", "InventoryAgent"],
+        "agents": [
+          "ProcurementAgent",
+          "InventoryAgent"
+        ],
         "pattern": "parallel",
         "notes": "Both actions are independent and should be dispatched simultaneously. PO number must be clarified before routing."
       },
-      "expected_clarification": ["PO number"],
+      "expected_clarification": [
+        "PO number"
+      ],
       "failure_modes": [
         "Routes only to ProcurementAgent, drops inventory check",
         "Executes sequentially instead of in parallel",
@@ -28,11 +33,22 @@
         "routing_pattern": 30,
         "clarification_completeness": 30
       },
-      "tags": ["multi-intent", "parallel", "procurement", "inventory", "P1"],
+      "tags": [
+        "multi-intent",
+        "parallel",
+        "procurement",
+        "inventory",
+        "P1"
+      ],
       "observability_hints": {
         "expected_spans": 3,
-        "key_attributes": ["orchestration.intent_count", "orchestration.routing_pattern"]
-      }
+        "key_attributes": [
+          "orchestration.intent_count",
+          "orchestration.routing_pattern"
+        ]
+      },
+      "severity": "high",
+      "latency_budget_ms": 2000
     },
     {
       "id": "INT-002",
@@ -43,11 +59,17 @@
       "prompt": "First approve my expense report, then book the travel once it's approved.",
       "turns": null,
       "expected_routing": {
-        "agents": ["ExpenseApprovalAgent", "TravelBookingAgent"],
+        "agents": [
+          "ExpenseApprovalAgent",
+          "TravelBookingAgent"
+        ],
         "pattern": "sequential",
         "notes": "Travel booking depends on expense approval. The word 'first...then' signals sequential dependency."
       },
-      "expected_clarification": ["Expense report ID", "Travel destination and dates"],
+      "expected_clarification": [
+        "Expense report ID",
+        "Travel destination and dates"
+      ],
       "failure_modes": [
         "Books travel before expense is approved",
         "Dispatches agents in parallel ignoring the sequential dependency",
@@ -58,7 +80,24 @@
         "sequence_detection": 50,
         "context_carry": 50
       },
-      "tags": ["multi-intent", "sequential", "finance", "travel", "expense", "P1"]
+      "tags": [
+        "multi-intent",
+        "sequential",
+        "finance",
+        "travel",
+        "expense",
+        "P1"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.intent_count",
+          "orchestration.routing_pattern",
+          "orchestration.intent_decomposition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "INT-003",
@@ -69,14 +108,20 @@
       "prompt": "Cancel my subscription and also update my billing email address.",
       "turns": null,
       "expected_routing": {
-        "agents": ["SubscriptionManagementAgent", "BillingAgent"],
+        "agents": [
+          "SubscriptionManagementAgent",
+          "BillingAgent"
+        ],
         "pattern": "parallel",
         "notes": "Both actions are independent. No dependency between cancellation and email update."
       },
-      "expected_clarification": ["New billing email address", "Subscription ID or account identifier"],
+      "expected_clarification": [
+        "New billing email address",
+        "Subscription ID or account identifier"
+      ],
       "failure_modes": [
         "Only cancels subscription, ignores email update",
-        "Updates email first, then cancels — unnecessary sequential dependency",
+        "Updates email first, then cancels \u2014 unnecessary sequential dependency",
         "Cancels subscription without confirming new email, leaving billing records stale"
       ],
       "enterprise_impact": "Customer receives billing correspondence at old address; failed dunning notifications post-cancellation.",
@@ -85,7 +130,23 @@
         "routing_pattern": 30,
         "clarification_completeness": 30
       },
-      "tags": ["multi-intent", "parallel", "customer-service", "billing", "subscription"]
+      "tags": [
+        "multi-intent",
+        "parallel",
+        "customer-service",
+        "billing",
+        "subscription"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.intent_count",
+          "orchestration.routing_pattern",
+          "orchestration.intent_decomposition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "INT-004",
@@ -96,11 +157,18 @@
       "prompt": "Can you book me a meeting for tomorrow and also tell me if I'm free in the afternoon?",
       "turns": null,
       "expected_routing": {
-        "agents": ["CalendarBookingAgent", "AvailabilityCheckAgent"],
+        "agents": [
+          "CalendarBookingAgent",
+          "AvailabilityCheckAgent"
+        ],
         "pattern": "parallel",
         "notes": "Availability check should inform booking, but both queries can be issued in parallel against the calendar system."
       },
-      "expected_clarification": ["Meeting subject", "Meeting attendees", "Preferred time slot"],
+      "expected_clarification": [
+        "Meeting subject",
+        "Meeting attendees",
+        "Preferred time slot"
+      ],
       "failure_modes": [
         "Books meeting without first verifying the user is free",
         "Checks availability only, does not proceed to booking",
@@ -112,7 +180,23 @@
         "routing_pattern": 30,
         "clarification_completeness": 30
       },
-      "tags": ["multi-intent", "parallel", "calendar", "scheduling", "general"]
+      "tags": [
+        "multi-intent",
+        "parallel",
+        "calendar",
+        "scheduling",
+        "general"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.intent_count",
+          "orchestration.routing_pattern",
+          "orchestration.intent_decomposition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "INT-005",
@@ -123,11 +207,16 @@
       "prompt": "My order is late and I want to know whether I can still return it.",
       "turns": null,
       "expected_routing": {
-        "agents": ["OrderStatusAgent", "ReturnPolicyAgent"],
+        "agents": [
+          "OrderStatusAgent",
+          "ReturnPolicyAgent"
+        ],
         "pattern": "sequential",
         "notes": "Must retrieve order details (delivery date, item condition) before evaluating return window eligibility."
       },
-      "expected_clarification": ["Order number"],
+      "expected_clarification": [
+        "Order number"
+      ],
       "failure_modes": [
         "Checks return policy in isolation without fetching order details",
         "Answers only about the delay, ignores return eligibility",
@@ -138,7 +227,23 @@
         "sequence_detection": 50,
         "context_carry": 50
       },
-      "tags": ["multi-intent", "sequential", "customer-service", "order", "returns"]
+      "tags": [
+        "multi-intent",
+        "sequential",
+        "customer-service",
+        "order",
+        "returns"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.intent_count",
+          "orchestration.routing_pattern",
+          "orchestration.intent_decomposition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "INT-006",
@@ -149,22 +254,45 @@
       "prompt": "Reset my password and also send the new login details to my work email.",
       "turns": null,
       "expected_routing": {
-        "agents": ["IdentityManagementAgent", "NotificationAgent"],
+        "agents": [
+          "IdentityManagementAgent",
+          "NotificationAgent"
+        ],
         "pattern": "sequential",
         "notes": "Password must be reset first to obtain new credentials before notification can be sent."
       },
-      "expected_clarification": ["Username or employee ID", "Work email address"],
+      "expected_clarification": [
+        "Username or employee ID",
+        "Work email address"
+      ],
       "failure_modes": [
         "Sends notification before reset completes",
         "Resets password but does not trigger notification",
-        "Dispatches both agents in parallel — notification has no credentials to send yet"
+        "Dispatches both agents in parallel \u2014 notification has no credentials to send yet"
       ],
       "enterprise_impact": "Security risk if credentials sent before reset; user locked out if notification never sent.",
       "scoring": {
         "sequence_detection": 50,
         "context_carry": 50
       },
-      "tags": ["multi-intent", "sequential", "it", "security", "identity", "notification"]
+      "tags": [
+        "multi-intent",
+        "sequential",
+        "it",
+        "security",
+        "identity",
+        "notification"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.intent_count",
+          "orchestration.routing_pattern",
+          "orchestration.intent_decomposition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "INT-007",
@@ -175,15 +303,21 @@
       "prompt": "Check my account balance and transfer 200 euros if the funds are available.",
       "turns": null,
       "expected_routing": {
-        "agents": ["AccountBalanceAgent", "FundsTransferAgent"],
+        "agents": [
+          "AccountBalanceAgent",
+          "FundsTransferAgent"
+        ],
         "pattern": "conditional",
         "notes": "Balance check gates the transfer. Transfer only proceeds if balance >= 200 EUR. Must not transfer without verification."
       },
-      "expected_clarification": ["Account number", "Destination account"],
+      "expected_clarification": [
+        "Account number",
+        "Destination account"
+      ],
       "failure_modes": [
         "Transfers without checking balance first",
         "Checks balance but ignores the transfer intent",
-        "Routes both in parallel — transfer agent acts without balance data"
+        "Routes both in parallel \u2014 transfer agent acts without balance data"
       ],
       "enterprise_impact": "Overdraft, failed transaction, or regulatory compliance violation.",
       "scoring": {
@@ -191,7 +325,23 @@
         "conditional_logic": 35,
         "clarification_completeness": 30
       },
-      "tags": ["multi-intent", "conditional", "finance", "banking", "transfer"]
+      "tags": [
+        "multi-intent",
+        "conditional",
+        "finance",
+        "banking",
+        "transfer"
+      ],
+      "severity": "critical",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.intent_count",
+          "orchestration.routing_pattern",
+          "orchestration.intent_decomposition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "INT-008",
@@ -202,11 +352,17 @@
       "prompt": "Tell me the policy for vacation days and whether I can take next Friday off.",
       "turns": null,
       "expected_routing": {
-        "agents": ["HRPolicyAgent", "LeaveAvailabilityAgent"],
+        "agents": [
+          "HRPolicyAgent",
+          "LeaveAvailabilityAgent"
+        ],
         "pattern": "parallel",
         "notes": "Policy lookup and leave balance check are independent; both can run concurrently."
       },
-      "expected_clarification": ["Employee ID or name", "Policy region (to identify applicable policy)"],
+      "expected_clarification": [
+        "Employee ID or name",
+        "Policy region (to identify applicable policy)"
+      ],
       "failure_modes": [
         "Returns policy only, does not check Friday availability",
         "Checks leave balance without fetching the applicable policy",
@@ -218,7 +374,23 @@
         "routing_pattern": 30,
         "clarification_completeness": 30
       },
-      "tags": ["multi-intent", "parallel", "hr", "leave", "policy"]
+      "tags": [
+        "multi-intent",
+        "parallel",
+        "hr",
+        "leave",
+        "policy"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.intent_count",
+          "orchestration.routing_pattern",
+          "orchestration.intent_decomposition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "INT-009",
@@ -229,11 +401,17 @@
       "prompt": "Cancel my hotel booking and make sure the airline ticket is still valid.",
       "turns": null,
       "expected_routing": {
-        "agents": ["HotelCancellationAgent", "AirlineTicketVerificationAgent"],
+        "agents": [
+          "HotelCancellationAgent",
+          "AirlineTicketVerificationAgent"
+        ],
         "pattern": "parallel",
         "notes": "Hotel cancellation and ticket verification are fully independent actions."
       },
-      "expected_clarification": ["Hotel booking reference", "Flight booking reference or ticket number"],
+      "expected_clarification": [
+        "Hotel booking reference",
+        "Flight booking reference or ticket number"
+      ],
       "failure_modes": [
         "Cancels hotel only, ignores ticket check",
         "Checks ticket first sequentially before cancelling hotel",
@@ -245,7 +423,23 @@
         "routing_pattern": 30,
         "clarification_completeness": 30
       },
-      "tags": ["multi-intent", "parallel", "travel", "hotel", "airline"]
+      "tags": [
+        "multi-intent",
+        "parallel",
+        "travel",
+        "hotel",
+        "airline"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.intent_count",
+          "orchestration.routing_pattern",
+          "orchestration.intent_decomposition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "INT-010",
@@ -256,14 +450,20 @@
       "prompt": "Approve my leave request and find coverage for my shift while I'm out.",
       "turns": null,
       "expected_routing": {
-        "agents": ["LeaveApprovalAgent", "ShiftCoverageAgent"],
+        "agents": [
+          "LeaveApprovalAgent",
+          "ShiftCoverageAgent"
+        ],
         "pattern": "parallel",
-        "notes": "Both actions can begin in parallel. Coverage search does not need to wait for leave approval — both should be initiated simultaneously to minimize turnaround."
+        "notes": "Both actions can begin in parallel. Coverage search does not need to wait for leave approval \u2014 both should be initiated simultaneously to minimize turnaround."
       },
-      "expected_clarification": ["Leave request ID", "Shift details (date, time, role, required skills)"],
+      "expected_clarification": [
+        "Leave request ID",
+        "Shift details (date, time, role, required skills)"
+      ],
       "failure_modes": [
         "Approves leave without initiating coverage search",
-        "Waits for approval before searching coverage — unnecessary bottleneck",
+        "Waits for approval before searching coverage \u2014 unnecessary bottleneck",
         "Searches coverage without confirming leave dates"
       ],
       "enterprise_impact": "Operational disruption from uncovered shifts; delayed leave approval blocking employee planning.",
@@ -272,7 +472,24 @@
         "routing_pattern": 30,
         "clarification_completeness": 30
       },
-      "tags": ["multi-intent", "parallel", "hr", "leave", "scheduling", "workforce"]
+      "tags": [
+        "multi-intent",
+        "parallel",
+        "hr",
+        "leave",
+        "scheduling",
+        "workforce"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.intent_count",
+          "orchestration.routing_pattern",
+          "orchestration.intent_decomposition"
+        ]
+      },
+      "latency_budget_ms": 2000
     }
   ]
 }

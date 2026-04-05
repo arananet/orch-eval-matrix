@@ -9,7 +9,7 @@
     "id": {
       "type": "string",
       "description": "Unique scenario identifier. Format: {PREFIX}-{NNN} e.g. INT-001, CLR-012",
-      "pattern": "^(INT|CLR|MTX|CND|CNF|TLC)-\\d{3}$"
+      "pattern": "^(INT|CLR|MTX|CND|CNF|TLC|ADV)-\\d{3}$"
     },
     "category": {
       "type": "string",
@@ -20,7 +20,8 @@
         "multi_turn_context",
         "conditional_routing",
         "conflict_resolution",
-        "tool_chaining"
+        "tool_chaining",
+        "adversarial"
       ]
     },
     "subcategory": {
@@ -30,7 +31,8 @@
         "multi_intent_parallel",
         "multi_intent_sequential",
         "multi_intent_conditional",
-        "missing_entity",
+        "missing_identifier",
+        "missing_context",
         "ambiguous_system",
         "ambiguous_scope",
         "context_carryover",
@@ -45,7 +47,12 @@
         "policy_conflict",
         "regional_vs_global",
         "multi_tool_sequential",
-        "multi_tool_parallel"
+        "multi_tool_parallel",
+        "prompt_injection",
+        "social_engineering",
+        "intent_spoofing",
+        "context_poisoning",
+        "tool_chain_manipulation"
       ]
     },
     "domain": {
@@ -68,7 +75,7 @@
       "description": "Short human-readable title for the scenario"
     },
     "prompt": {
-      "type": "string",
+      "type": ["string", "null"],
       "description": "The single-turn user prompt. For multi-turn scenarios use the 'turns' field instead. Set to null for multi-turn scenarios."
     },
     "turns": {
@@ -146,6 +153,36 @@
       "description": "Searchable tags for filtering and reporting",
       "items": { "type": "string" },
       "minItems": 1
+    },
+    "severity": {
+      "type": "string",
+      "description": "Enterprise risk severity if this scenario fails in production. Drives scoring overrides and alerting.",
+      "enum": ["critical", "high", "medium", "low"]
+    },
+    "hitl_hotl": {
+      "type": "object",
+      "description": "Human-in-the-Loop (HITL) or Human-on-the-Loop (HOTL) classification. HITL = hard stop before proceeding. HOTL = proceed with oversight window.",
+      "required": ["mode", "trigger", "reason"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["HITL", "HOTL"],
+          "description": "HITL: orchestrator must stop and wait for human decision. HOTL: orchestrator proceeds but human can intervene within the oversight window."
+        },
+        "trigger": {
+          "type": "string",
+          "description": "The condition that triggers human involvement"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why human involvement is required"
+        }
+      }
+    },
+    "latency_budget_ms": {
+      "type": "integer",
+      "description": "Maximum acceptable end-to-end orchestration latency for this scenario in milliseconds. Exceeding this is a non-functional failure.",
+      "minimum": 100
     },
     "observability_hints": {
       "type": "object",

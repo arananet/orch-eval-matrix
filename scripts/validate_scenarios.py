@@ -30,6 +30,7 @@ EXPECTED_COUNTS = {
     "04_conditional_routing": 10,
     "05_conflict_resolution": 10,
     "06_tool_chaining": 5,
+    "07_adversarial": 5,
 }
 
 
@@ -113,7 +114,7 @@ def main() -> None:
         all_errors.extend(errors)
         all_warnings.extend(warnings)
 
-    print(f"\nTotal scenarios: {total_scenarios}/75")
+    print(f"\nTotal scenarios: {total_scenarios}/80")
     print(f"Total IDs: {len(all_ids)} unique")
 
     if all_errors:

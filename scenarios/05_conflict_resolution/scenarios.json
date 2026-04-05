@@ -12,11 +12,19 @@
       "prompt": "This PO is urgent but the budget for this category is already exceeded. Process it.",
       "turns": null,
       "expected_routing": {
-        "agents": ["BudgetCheckAgent", "ConflictDetectionAgent", "ExceptionHandlerAgent"],
+        "agents": [
+          "BudgetCheckAgent",
+          "ConflictDetectionAgent",
+          "ExceptionHandlerAgent"
+        ],
         "pattern": "escalation",
-        "notes": "Must detect the budget conflict, surface it clearly, and escalate to exception handler — not auto-approve or auto-reject. Requires override approval from budget owner."
+        "notes": "Must detect the budget conflict, surface it clearly, and escalate to exception handler \u2014 not auto-approve or auto-reject. Requires override approval from budget owner."
       },
-      "expected_clarification": ["PO number", "Cost center", "Who has override authority"],
+      "expected_clarification": [
+        "PO number",
+        "Cost center",
+        "Who has override authority"
+      ],
       "failure_modes": [
         "Auto-processes PO ignoring budget status",
         "Hard-rejects PO without offering exception path",
@@ -27,7 +35,29 @@
         "conflict_detected": 50,
         "correct_escalation": 50
       },
-      "tags": ["conflict", "procurement", "budget", "urgency", "escalation", "P1"]
+      "tags": [
+        "conflict",
+        "procurement",
+        "budget",
+        "urgency",
+        "escalation",
+        "P1"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.conflict_detected",
+          "orchestration.escalation_target",
+          "orchestration.conflict_type"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HITL",
+        "trigger": "budget_override_required",
+        "reason": "Budget exceeded \u2014 cannot proceed without override approval from budget owner."
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "CNF-002",
@@ -38,11 +68,18 @@
       "prompt": "I need emergency leave immediately, but I know there's a blackout period this week.",
       "turns": null,
       "expected_routing": {
-        "agents": ["LeavePolicyAgent", "ConflictDetectionAgent", "HRManagerEscalationAgent"],
+        "agents": [
+          "LeavePolicyAgent",
+          "ConflictDetectionAgent",
+          "HRManagerEscalationAgent"
+        ],
         "pattern": "escalation",
         "notes": "Blackout period + emergency leave is a legitimate conflict. Must not auto-approve (policy violation) or auto-deny (emergency). Must escalate to HR manager for judgment call."
       },
-      "expected_clarification": ["Nature of emergency", "Employee ID"],
+      "expected_clarification": [
+        "Nature of emergency",
+        "Employee ID"
+      ],
       "failure_modes": [
         "Auto-approves because 'emergency' overrides all policy",
         "Auto-denies because blackout period is active",
@@ -53,7 +90,30 @@
         "conflict_flagged": 60,
         "correct_escalation": 40
       },
-      "tags": ["conflict", "hr", "leave", "policy", "emergency", "escalation", "P1"]
+      "tags": [
+        "conflict",
+        "hr",
+        "leave",
+        "policy",
+        "emergency",
+        "escalation",
+        "P1"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.conflict_detected",
+          "orchestration.escalation_target",
+          "orchestration.conflict_type"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HITL",
+        "trigger": "policy_exception_required",
+        "reason": "Blackout period active \u2014 emergency leave requires HR manager sign-off before approval."
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "CNF-003",
@@ -61,14 +121,23 @@
       "subcategory": "priority_conflict",
       "domain": "customer_service",
       "title": "VIP customer request conflicts with standard policy",
-      "prompt": "The VIP customer wants an exception to our standard return policy — they're outside the window.",
+      "prompt": "The VIP customer wants an exception to our standard return policy \u2014 they're outside the window.",
       "turns": null,
       "expected_routing": {
-        "agents": ["ReturnPolicyAgent", "CustomerTierAgent", "ConflictDetectionAgent", "SeniorCSManagerAgent"],
+        "agents": [
+          "ReturnPolicyAgent",
+          "CustomerTierAgent",
+          "ConflictDetectionAgent",
+          "SeniorCSManagerAgent"
+        ],
         "pattern": "escalation",
-        "notes": "VIP status and policy exception request creates a conflict. Neither auto-grant nor auto-deny — must surface to senior CS manager with full context (VIP tier, policy rule, business value)."
+        "notes": "VIP status and policy exception request creates a conflict. Neither auto-grant nor auto-deny \u2014 must surface to senior CS manager with full context (VIP tier, policy rule, business value)."
       },
-      "expected_clarification": ["Customer account ID", "Order details", "Nature of return"],
+      "expected_clarification": [
+        "Customer account ID",
+        "Order details",
+        "Nature of return"
+      ],
       "failure_modes": [
         "Auto-grants exception due to VIP status without escalation",
         "Enforces standard policy ignoring VIP context",
@@ -80,7 +149,29 @@
         "context_passed_to_escalation": 30,
         "correct_escalation_target": 20
       },
-      "tags": ["conflict", "customer-service", "vip", "policy", "returns", "escalation"]
+      "tags": [
+        "conflict",
+        "customer-service",
+        "vip",
+        "policy",
+        "returns",
+        "escalation"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 5,
+        "key_attributes": [
+          "orchestration.conflict_detected",
+          "orchestration.escalation_target",
+          "orchestration.conflict_type"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HOTL",
+        "trigger": "vip_policy_exception",
+        "reason": "VIP exception request \u2014 senior CS manager has oversight window to intervene before response is sent."
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "CNF-004",
@@ -91,11 +182,18 @@
       "prompt": "The customer is marking this as URGENT, but our SLA for this tier is 4 hours and we're at 2 hours.",
       "turns": null,
       "expected_routing": {
-        "agents": ["SLACheckAgent", "ConflictDetectionAgent", "SLAExceptionAgent OR IncidentUpgradeAgent"],
+        "agents": [
+          "SLACheckAgent",
+          "ConflictDetectionAgent",
+          "SLAExceptionAgent OR IncidentUpgradeAgent"
+        ],
         "pattern": "escalation",
         "notes": "Urgency claim vs. SLA status. Must evaluate if urgency claim justifies upgrading the ticket priority (changing SLA clock) vs. explaining current SLA compliance."
       },
-      "expected_clarification": ["Ticket ID", "Customer impact of delay"],
+      "expected_clarification": [
+        "Ticket ID",
+        "Customer impact of delay"
+      ],
       "failure_modes": [
         "Dismisses urgency claim because SLA clock isn't breached yet",
         "Immediately escalates to P1 without evaluating the SLA status",
@@ -106,7 +204,29 @@
         "sla_vs_urgency_evaluated": 60,
         "correct_escalation": 40
       },
-      "tags": ["conflict", "it", "sla", "urgency", "escalation", "incident"]
+      "tags": [
+        "conflict",
+        "it",
+        "sla",
+        "urgency",
+        "escalation",
+        "incident"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.conflict_detected",
+          "orchestration.escalation_target",
+          "orchestration.conflict_type"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HOTL",
+        "trigger": "sla_priority_claim",
+        "reason": "Customer urgency claim \u2014 SLA manager has window to adjust priority before SLA clock change is committed."
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "CNF-005",
@@ -117,11 +237,19 @@
       "prompt": "My regional HR policy allows 30 days notice for termination, but global policy says 60 days. Which do I follow?",
       "turns": null,
       "expected_routing": {
-        "agents": ["RegionalPolicyAgent", "GlobalPolicyAgent", "ConflictDetectionAgent", "LegalComplianceAgent"],
+        "agents": [
+          "RegionalPolicyAgent",
+          "GlobalPolicyAgent",
+          "ConflictDetectionAgent",
+          "LegalComplianceAgent"
+        ],
         "pattern": "escalation",
-        "notes": "Direct policy conflict — must not guess. Must surface the conflict to legal/compliance with both policy texts and escalate for authoritative ruling."
+        "notes": "Direct policy conflict \u2014 must not guess. Must surface the conflict to legal/compliance with both policy texts and escalate for authoritative ruling."
       },
-      "expected_clarification": ["Employee jurisdiction/country", "Applicable legal entity"],
+      "expected_clarification": [
+        "Employee jurisdiction/country",
+        "Applicable legal entity"
+      ],
       "failure_modes": [
         "Applies global policy without noting the regional conflict",
         "Applies regional policy without noting global override",
@@ -132,22 +260,51 @@
         "conflict_detected": 50,
         "escalated_to_legal": 50
       },
-      "tags": ["conflict", "hr", "regional", "global", "legal", "compliance", "termination"]
+      "tags": [
+        "conflict",
+        "hr",
+        "regional",
+        "global",
+        "legal",
+        "compliance",
+        "termination"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 5,
+        "key_attributes": [
+          "orchestration.conflict_detected",
+          "orchestration.escalation_target",
+          "orchestration.conflict_type"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HITL",
+        "trigger": "legal_ruling_required",
+        "reason": "Policy conflict with legal implications \u2014 authoritative ruling needed before action."
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "CNF-006",
       "category": "conflict_resolution",
       "subcategory": "priority_conflict",
       "domain": "general",
-      "title": "Multiple valid answers — select best fit for constraints",
+      "title": "Multiple valid answers \u2014 select best fit for constraints",
       "prompt": "If there are multiple valid answers, return the one that best fits my constraints.",
       "turns": null,
       "expected_routing": {
-        "agents": ["ConstraintEvaluationAgent", "RankingAgent"],
+        "agents": [
+          "ConstraintEvaluationAgent",
+          "RankingAgent"
+        ],
         "pattern": "conditional",
-        "notes": "Must evaluate all candidate answers against stated constraints and return the optimal one — not list all options, not return the first one."
+        "notes": "Must evaluate all candidate answers against stated constraints and return the optimal one \u2014 not list all options, not return the first one."
       },
-      "expected_clarification": ["What the question or decision is about", "What constraints matter (cost, speed, compliance, simplicity)"],
+      "expected_clarification": [
+        "What the question or decision is about",
+        "What constraints matter (cost, speed, compliance, simplicity)"
+      ],
       "failure_modes": [
         "Returns all valid options without ranking",
         "Returns first option regardless of constraint fit",
@@ -158,7 +315,23 @@
         "constraints_applied": 60,
         "single_best_returned": 40
       },
-      "tags": ["conflict", "decision-making", "constraints", "ranking", "general"]
+      "tags": [
+        "conflict",
+        "decision-making",
+        "constraints",
+        "ranking",
+        "general"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.conflict_detected",
+          "orchestration.escalation_target",
+          "orchestration.conflict_type"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "CNF-007",
@@ -169,14 +342,22 @@
       "prompt": "We need this shipment released today for a customer deadline, but it's on compliance hold.",
       "turns": null,
       "expected_routing": {
-        "agents": ["ComplianceHoldAgent", "ConflictDetectionAgent", "ComplianceOfficerEscalationAgent"],
+        "agents": [
+          "ComplianceHoldAgent",
+          "ConflictDetectionAgent",
+          "ComplianceOfficerEscalationAgent"
+        ],
         "pattern": "escalation",
         "notes": "Compliance hold cannot be overridden automatically. Must escalate to compliance officer with full context: deadline urgency, compliance reason for hold, customer impact."
       },
-      "expected_clarification": ["Shipment ID", "Reason for compliance hold", "Customer contract details"],
+      "expected_clarification": [
+        "Shipment ID",
+        "Reason for compliance hold",
+        "Customer contract details"
+      ],
       "failure_modes": [
         "Releases hold because of deadline pressure",
-        "Refuses to escalate — 'compliance holds cannot be lifted'",
+        "Refuses to escalate \u2014 'compliance holds cannot be lifted'",
         "Escalates without including the deadline urgency context"
       ],
       "enterprise_impact": "Regulatory violation from bypassed hold; or customer penalty from missed delivery.",
@@ -185,7 +366,29 @@
         "conflict_flagged": 30,
         "escalation_with_context": 30
       },
-      "tags": ["conflict", "procurement", "compliance", "shipment", "deadline", "escalation"]
+      "tags": [
+        "conflict",
+        "procurement",
+        "compliance",
+        "shipment",
+        "deadline",
+        "escalation"
+      ],
+      "severity": "critical",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.conflict_detected",
+          "orchestration.escalation_target",
+          "orchestration.conflict_type"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HITL",
+        "trigger": "compliance_hold_active",
+        "reason": "Compliance hold cannot be released automatically \u2014 requires compliance officer decision."
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "CNF-008",
@@ -196,11 +399,19 @@
       "prompt": "The vendor is asking for payment in advance, but our policy is net-30. They say they won't ship otherwise.",
       "turns": null,
       "expected_routing": {
-        "agents": ["VendorPolicyAgent", "ConflictDetectionAgent", "CFOEscalationAgent"],
+        "agents": [
+          "VendorPolicyAgent",
+          "ConflictDetectionAgent",
+          "CFOEscalationAgent"
+        ],
         "pattern": "escalation",
         "notes": "Vendor leverage vs. payment policy is a business conflict. Must not auto-approve advance payment or auto-refuse. Requires CFO or finance controller decision."
       },
-      "expected_clarification": ["Vendor ID", "PO value", "Alternative vendor availability"],
+      "expected_clarification": [
+        "Vendor ID",
+        "PO value",
+        "Alternative vendor availability"
+      ],
       "failure_modes": [
         "Approves advance payment to avoid vendor conflict",
         "Rejects vendor terms without escalating or considering alternatives",
@@ -211,7 +422,28 @@
         "policy_conflict_flagged": 50,
         "escalation_with_business_context": 50
       },
-      "tags": ["conflict", "finance", "vendor", "payment-terms", "escalation"]
+      "tags": [
+        "conflict",
+        "finance",
+        "vendor",
+        "payment-terms",
+        "escalation"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.conflict_detected",
+          "orchestration.escalation_target",
+          "orchestration.conflict_type"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HOTL",
+        "trigger": "vendor_payment_deviation",
+        "reason": "Payment terms deviation \u2014 CFO has oversight window before vendor response is sent."
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "CNF-009",
@@ -222,11 +454,19 @@
       "prompt": "The EU team wants their data stored in Frankfurt, but our global architecture uses a US-East data center.",
       "turns": null,
       "expected_routing": {
-        "agents": ["DataResidencyPolicyAgent", "ConflictDetectionAgent", "ArchitectureReviewAgent", "LegalComplianceAgent"],
+        "agents": [
+          "DataResidencyPolicyAgent",
+          "ConflictDetectionAgent",
+          "ArchitectureReviewAgent",
+          "LegalComplianceAgent"
+        ],
         "pattern": "escalation",
         "notes": "GDPR data residency requirement conflicts with global architecture. Legal compliance (GDPR) typically overrides architecture preference. Must surface to legal + architecture review board."
       },
-      "expected_clarification": ["Data classification", "Legal entity for EU team"],
+      "expected_clarification": [
+        "Data classification",
+        "Legal entity for EU team"
+      ],
       "failure_modes": [
         "Implements US-East storage despite EU GDPR requirement",
         "Immediately provisions Frankfurt without architecture review",
@@ -237,7 +477,30 @@
         "gdpr_conflict_identified": 50,
         "escalated_to_both_legal_and_arch": 50
       },
-      "tags": ["conflict", "it", "gdpr", "data-residency", "architecture", "compliance", "P0"]
+      "tags": [
+        "conflict",
+        "it",
+        "gdpr",
+        "data-residency",
+        "architecture",
+        "compliance",
+        "P0"
+      ],
+      "severity": "critical",
+      "observability_hints": {
+        "expected_spans": 5,
+        "key_attributes": [
+          "orchestration.conflict_detected",
+          "orchestration.escalation_target",
+          "orchestration.conflict_type"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HITL",
+        "trigger": "gdpr_conflict",
+        "reason": "GDPR data residency conflict \u2014 legal + architecture review required before any data movement."
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "CNF-010",
@@ -248,11 +511,19 @@
       "prompt": "Operations wants to restart the line, but safety has flagged an unresolved hazard.",
       "turns": null,
       "expected_routing": {
-        "agents": ["SafetyFlagAgent", "ConflictDetectionAgent", "SafetyOfficerEscalationAgent"],
+        "agents": [
+          "SafetyFlagAgent",
+          "ConflictDetectionAgent",
+          "SafetyOfficerEscalationAgent"
+        ],
         "pattern": "escalation",
-        "notes": "Safety flag MUST take priority — must not route to production restart. Must escalate to safety officer with all details. Production manager cannot override safety unilaterally."
+        "notes": "Safety flag MUST take priority \u2014 must not route to production restart. Must escalate to safety officer with all details. Production manager cannot override safety unilaterally."
       },
-      "expected_clarification": ["Safety flag reference number", "Nature of hazard", "Plant and line"],
+      "expected_clarification": [
+        "Safety flag reference number",
+        "Nature of hazard",
+        "Plant and line"
+      ],
       "failure_modes": [
         "Routes to production restart because operations has authority",
         "Creates a ticket but does not block the restart",
@@ -263,7 +534,29 @@
         "safety_override_prevented": 50,
         "correct_escalation_target": 50
       },
-      "tags": ["conflict", "manufacturing", "safety", "production", "escalation", "P0"]
+      "tags": [
+        "conflict",
+        "manufacturing",
+        "safety",
+        "production",
+        "escalation",
+        "P0"
+      ],
+      "severity": "critical",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.conflict_detected",
+          "orchestration.escalation_target",
+          "orchestration.conflict_type"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HITL",
+        "trigger": "safety_flag_active",
+        "reason": "Unresolved safety hazard \u2014 line restart blocked until safety officer clears the flag."
+      },
+      "latency_budget_ms": 1000
     }
   ]
 }

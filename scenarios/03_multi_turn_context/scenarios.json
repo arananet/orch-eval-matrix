@@ -29,14 +29,17 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "ManufacturingMESAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "ManufacturingMESAgent"
+        ],
         "pattern": "sequential",
         "notes": "Turn 2 must use Plant 3 from turn 1. Querying line 2 at Plant 3, not a default or unknown plant."
       },
       "expected_clarification": [],
       "failure_modes": [
-        "Checks line 2 without specifying Plant 3 — returns wrong line",
-        "Asks 'which plant?' on turn 2 — context was already provided",
+        "Checks line 2 without specifying Plant 3 \u2014 returns wrong line",
+        "Asks 'which plant?' on turn 2 \u2014 context was already provided",
         "Checks line 2 at default plant (Plant 1)"
       ],
       "enterprise_impact": "Wrong production line monitored; undetected stoppage at actual plant.",
@@ -44,7 +47,23 @@
         "context_retained": 60,
         "correct_routing": 40
       },
-      "tags": ["multi-turn", "context-carryover", "manufacturing", "plant", "P1"]
+      "tags": [
+        "multi-turn",
+        "context-carryover",
+        "manufacturing",
+        "plant",
+        "P1"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-002",
@@ -74,13 +93,16 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "TravelBookingAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "TravelBookingAgent"
+        ],
         "pattern": "sequential",
         "notes": "Context must update destination to Madrid and retain the date. Must NOT book both Berlin and Madrid."
       },
       "expected_clarification": [],
       "failure_modes": [
-        "Books both Berlin and Madrid — double booking",
+        "Books both Berlin and Madrid \u2014 double booking",
         "Forgets the date from turn 1 and asks again",
         "Acknowledges change but still books Berlin"
       ],
@@ -89,7 +111,22 @@
         "context_updated": 70,
         "no_duplicate_booking": 30
       },
-      "tags": ["multi-turn", "context-modification", "travel", "booking"]
+      "tags": [
+        "multi-turn",
+        "context-modification",
+        "travel",
+        "booking"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-003",
@@ -121,13 +158,18 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "HotelSearchAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "HotelSearchAgent"
+        ],
         "pattern": "sequential",
         "notes": "Must search for hotels in Madrid city center for next week. Destination must be carried from turn 1."
       },
-      "expected_clarification": ["Check-in and check-out dates"],
+      "expected_clarification": [
+        "Check-in and check-out dates"
+      ],
       "failure_modes": [
-        "Asks 'where are you traveling?' — context was already provided",
+        "Asks 'where are you traveling?' \u2014 context was already provided",
         "Searches globally for 'city center hotels' without Madrid context",
         "Books hotel without confirming dates"
       ],
@@ -136,7 +178,22 @@
         "context_retained": 60,
         "correct_routing": 40
       },
-      "tags": ["multi-turn", "context-carryover", "travel", "hotel"]
+      "tags": [
+        "multi-turn",
+        "context-carryover",
+        "travel",
+        "hotel"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-004",
@@ -165,13 +222,16 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "LeaveManagementAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "LeaveManagementAgent"
+        ],
         "pattern": "sequential",
         "notes": "Date change requires updated manager approval. Must not retain Thursday date. Must flag that new date needs re-approval."
       },
       "expected_clarification": [],
       "failure_modes": [
-        "Updates to Friday but marks as already approved — skips re-approval",
+        "Updates to Friday but marks as already approved \u2014 skips re-approval",
         "Keeps Thursday in the system despite user changing to Friday",
         "Processes Friday leave as a new separate request instead of modification"
       ],
@@ -180,7 +240,23 @@
         "context_updated": 60,
         "approval_reset": 40
       },
-      "tags": ["multi-turn", "context-modification", "hr", "leave", "approval"]
+      "tags": [
+        "multi-turn",
+        "context-modification",
+        "hr",
+        "leave",
+        "approval"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-005",
@@ -192,11 +268,19 @@
       "turns": [
         {
           "turn": 1,
-          "user": "I have two flights booked: LH4402 at €320 and IB3310 at €210.",
+          "user": "I have two flights booked: LH4402 at \u20ac320 and IB3310 at \u20ac210.",
           "expected_state": {
             "flights": [
-              {"id": "LH4402", "price": 320, "currency": "EUR"},
-              {"id": "IB3310", "price": 210, "currency": "EUR"}
+              {
+                "id": "LH4402",
+                "price": 320,
+                "currency": "EUR"
+              },
+              {
+                "id": "IB3310",
+                "price": 210,
+                "currency": "EUR"
+              }
             ]
           }
         },
@@ -210,13 +294,16 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "FlightCancellationAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "FlightCancellationAgent"
+        ],
         "pattern": "sequential",
-        "notes": "Must identify IB3310 as cheaper (€210 vs €320) from context and cancel it specifically."
+        "notes": "Must identify IB3310 as cheaper (\u20ac210 vs \u20ac320) from context and cancel it specifically."
       },
       "expected_clarification": [],
       "failure_modes": [
-        "Asks 'which flight?' — data was provided in turn 1",
+        "Asks 'which flight?' \u2014 data was provided in turn 1",
         "Cancels the wrong flight (LH4402)",
         "Cancels both flights"
       ],
@@ -225,7 +312,23 @@
         "context_retained": 50,
         "correct_selection": 50
       },
-      "tags": ["multi-turn", "context-carryover", "travel", "flight", "reasoning"]
+      "tags": [
+        "multi-turn",
+        "context-carryover",
+        "travel",
+        "flight",
+        "reasoning"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-006",
@@ -254,14 +357,21 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "ExpenseProcessingAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "ExpenseProcessingAgent"
+        ],
         "pattern": "sequential",
         "notes": "Expense must route to corporate card, not personal account. Account type from turn 1 must be retained."
       },
-      "expected_clarification": ["Expense amount", "Expense category", "Receipt or reference"],
+      "expected_clarification": [
+        "Expense amount",
+        "Expense category",
+        "Receipt or reference"
+      ],
       "failure_modes": [
         "Routes expense to personal account",
-        "Asks 'corporate or personal?' — answered in turn 1",
+        "Asks 'corporate or personal?' \u2014 answered in turn 1",
         "Ignores account type context entirely"
       ],
       "enterprise_impact": "Personal card charged for corporate expense; reimbursement delay; tax reporting error.",
@@ -269,7 +379,23 @@
         "context_retained": 60,
         "correct_routing": 40
       },
-      "tags": ["multi-turn", "context-carryover", "finance", "expense", "corporate"]
+      "tags": [
+        "multi-turn",
+        "context-carryover",
+        "finance",
+        "expense",
+        "corporate"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-007",
@@ -299,22 +425,43 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "CustomerSupportLookupAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "CustomerSupportLookupAgent"
+        ],
         "pattern": "sequential",
         "notes": "Must search for existing support ticket from last Tuesday before creating a new one. Prior contact context must be used."
       },
-      "expected_clarification": ["Order number"],
+      "expected_clarification": [
+        "Order number"
+      ],
       "failure_modes": [
         "Creates a new duplicate support ticket",
         "Ignores the prior contact information",
-        "Asks 'have you contacted support before?' — answered in turn 2"
+        "Asks 'have you contacted support before?' \u2014 answered in turn 2"
       ],
       "enterprise_impact": "Duplicate tickets increase support workload; customer frustrated by repeating the issue.",
       "scoring": {
         "context_retained": 60,
         "no_duplicate_ticket": 40
       },
-      "tags": ["multi-turn", "context-carryover", "customer-service", "support", "deduplication"]
+      "tags": [
+        "multi-turn",
+        "context-carryover",
+        "customer-service",
+        "support",
+        "deduplication"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-008",
@@ -346,15 +493,21 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "HotelSearchAgent", "PriceComparisonAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "HotelSearchAgent",
+          "PriceComparisonAgent"
+        ],
         "pattern": "conditional",
         "notes": "Must compare 3-night vs 4-night price. Book 4 nights only if difference is within acceptable threshold. Must not ignore the condition."
       },
-      "expected_clarification": ["What 'small price difference' means (e.g., under €50?)"],
+      "expected_clarification": [
+        "What 'small price difference' means (e.g., under \u20ac50?)"
+      ],
       "failure_modes": [
         "Books 4 nights without checking price difference",
         "Ignores the modification and books 3 nights",
-        "Cannot evaluate 'small' without asking — but fails to ask"
+        "Cannot evaluate 'small' without asking \u2014 but fails to ask"
       ],
       "enterprise_impact": "Overspend on hotel; travel policy violation from unapproved extension.",
       "scoring": {
@@ -362,7 +515,23 @@
         "conditional_evaluation": 40,
         "clarification_completeness": 20
       },
-      "tags": ["multi-turn", "context-modification", "travel", "conditional", "hotel"]
+      "tags": [
+        "multi-turn",
+        "context-modification",
+        "travel",
+        "conditional",
+        "hotel"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 5,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-009",
@@ -382,7 +551,7 @@
         },
         {
           "turn": 2,
-          "user": "I'm actually in Europe this month — does the NA policy still apply?",
+          "user": "I'm actually in Europe this month \u2014 does the NA policy still apply?",
           "expected_state": {
             "region": "Europe",
             "original_region": "North America",
@@ -392,7 +561,10 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "HRPolicyAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "HRPolicyAgent"
+        ],
         "pattern": "sequential",
         "notes": "Must handle the policy conflict: home region (NA) vs. current location (EU). Policy agent must address which applies for traveling employees."
       },
@@ -407,7 +579,24 @@
         "context_retained": 40,
         "policy_conflict_handled": 60
       },
-      "tags": ["multi-turn", "policy-evolution", "hr", "regional", "expense", "travel"]
+      "tags": [
+        "multi-turn",
+        "policy-evolution",
+        "hr",
+        "regional",
+        "expense",
+        "travel"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-010",
@@ -436,11 +625,16 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "RecommendationAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "RecommendationAgent"
+        ],
         "pattern": "sequential",
         "notes": "Must apply BOTH constraints: simplest option that is also within budget. Must not drop the 'simplest' preference."
       },
-      "expected_clarification": ["Budget amount or limit"],
+      "expected_clarification": [
+        "Budget amount or limit"
+      ],
       "failure_modes": [
         "Recommends cheapest option ignoring 'simplest' preference",
         "Recommends simplest option ignoring budget constraint",
@@ -451,7 +645,23 @@
         "context_retained": 50,
         "both_constraints_applied": 50
       },
-      "tags": ["multi-turn", "context-modification", "general", "recommendation", "constraint"]
+      "tags": [
+        "multi-turn",
+        "context-modification",
+        "general",
+        "recommendation",
+        "constraint"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-011",
@@ -463,7 +673,7 @@
       "turns": [
         {
           "turn": 1,
-          "user": "This is for a VIP customer — handle with priority.",
+          "user": "This is for a VIP customer \u2014 handle with priority.",
           "expected_state": {
             "customer_tier": "VIP",
             "handling": "priority",
@@ -481,14 +691,17 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "CustomerCommunicationAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "CustomerCommunicationAgent"
+        ],
         "pattern": "sequential",
         "notes": "Draft must reflect VIP tone and must NOT mention the delay, as the VIP handling instruction from turn 1 applies."
       },
       "expected_clarification": [],
       "failure_modes": [
         "Drafts generic response ignoring VIP status",
-        "Mentions the delay — violates explicit constraint from turn 1",
+        "Mentions the delay \u2014 violates explicit constraint from turn 1",
         "Drops VIP context when moving to drafting task"
       ],
       "enterprise_impact": "VIP customer relationship damaged; escalation risk; revenue loss.",
@@ -496,7 +709,28 @@
         "vip_context_retained": 50,
         "constraint_respected": 50
       },
-      "tags": ["multi-turn", "context-carryover", "customer-service", "vip", "communication"]
+      "tags": [
+        "multi-turn",
+        "context-carryover",
+        "customer-service",
+        "vip",
+        "communication"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HOTL",
+        "trigger": "vip_communication",
+        "reason": "VIP customer communication \u2014 senior CS has oversight window before message is sent."
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-012",
@@ -525,7 +759,10 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "ProcurementDataAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "ProcurementDataAgent"
+        ],
         "pattern": "sequential",
         "notes": "Must re-execute the same task (top 5 open POs) but force a fresh data fetch. Must not re-use cached result from turn 1."
       },
@@ -540,7 +777,23 @@
         "task_retained": 50,
         "fresh_data_fetched": 50
       },
-      "tags": ["multi-turn", "context-carryover", "procurement", "data-freshness", "retry"]
+      "tags": [
+        "multi-turn",
+        "context-carryover",
+        "procurement",
+        "data-freshness",
+        "retry"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-013",
@@ -560,7 +813,7 @@
         },
         {
           "turn": 2,
-          "user": "Now I'm in EU — use the European policy from here on.",
+          "user": "Now I'm in EU \u2014 use the European policy from here on.",
           "expected_state": {
             "policy": "EU_expense_policy",
             "region": "EU",
@@ -569,7 +822,10 @@
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "ExpensePolicyAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "ExpensePolicyAgent"
+        ],
         "pattern": "sequential",
         "notes": "Must switch to EU policy immediately and apply it to all subsequent requests. Must not continue applying NA policy."
       },
@@ -584,7 +840,23 @@
         "policy_switched": 60,
         "no_retroactive_change": 40
       },
-      "tags": ["multi-turn", "policy-evolution", "finance", "expense", "regional"]
+      "tags": [
+        "multi-turn",
+        "policy-evolution",
+        "finance",
+        "expense",
+        "regional"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     },
     {
       "id": "MTX-014",
@@ -596,7 +868,7 @@
       "turns": [
         {
           "turn": 1,
-          "user": "I need help — my VPN isn't connecting.",
+          "user": "I need help \u2014 my VPN isn't connecting.",
           "expected_state": {
             "issue": "vpn_connection_failure",
             "tier": "L1_helpdesk",
@@ -615,7 +887,7 @@
         },
         {
           "turn": 3,
-          "user": "It's urgent — I have a client call in 20 minutes.",
+          "user": "It's urgent \u2014 I have a client call in 20 minutes.",
           "expected_state": {
             "issue": "vpn_connection_failure",
             "urgency": "high",
@@ -626,22 +898,45 @@
         }
       ],
       "expected_routing": {
-        "agents": ["L1HelpdeskAgent", "L2NetworkAgent"],
+        "agents": [
+          "L1HelpdeskAgent",
+          "L2NetworkAgent"
+        ],
         "pattern": "escalation",
         "notes": "Turn 1: L1 triage. Turn 2: escalate to L2 with full issue context. Turn 3: mark as urgent and add time constraint to L2 ticket."
       },
-      "expected_clarification": ["Employee ID", "Device type"],
+      "expected_clarification": [
+        "Employee ID",
+        "Device type"
+      ],
       "failure_modes": [
         "Resets context and re-triages on turn 2",
-        "Does not pass issue history to L2 — L2 starts from scratch",
-        "Ignores urgency in turn 3 — does not update priority"
+        "Does not pass issue history to L2 \u2014 L2 starts from scratch",
+        "Ignores urgency in turn 3 \u2014 does not update priority"
       ],
       "enterprise_impact": "Employee misses client call; SLA breach; customer impact.",
       "scoring": {
         "escalation_with_context": 60,
         "urgency_applied": 40
       },
-      "tags": ["multi-turn", "escalation-chain", "it", "vpn", "urgency", "P1"]
+      "tags": [
+        "multi-turn",
+        "escalation-chain",
+        "it",
+        "vpn",
+        "urgency",
+        "P1"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 5,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 4000
     },
     {
       "id": "MTX-015",
@@ -655,25 +950,45 @@
           "turn": 1,
           "user": "Check the status of PO-1001, PO-1002, and PO-1003.",
           "expected_state": {
-            "pos_requested": ["PO-1001", "PO-1002", "PO-1003"],
+            "pos_requested": [
+              "PO-1001",
+              "PO-1002",
+              "PO-1003"
+            ],
             "completed": [],
-            "remaining": ["PO-1001", "PO-1002", "PO-1003"]
+            "remaining": [
+              "PO-1001",
+              "PO-1002",
+              "PO-1003"
+            ]
           }
         },
         {
           "turn": 2,
           "user": "PO-1001 has been resolved. Now process PO-1002.",
           "expected_state": {
-            "pos_requested": ["PO-1001", "PO-1002", "PO-1003"],
-            "completed": ["PO-1001"],
-            "remaining": ["PO-1002", "PO-1003"],
+            "pos_requested": [
+              "PO-1001",
+              "PO-1002",
+              "PO-1003"
+            ],
+            "completed": [
+              "PO-1001"
+            ],
+            "remaining": [
+              "PO-1002",
+              "PO-1003"
+            ],
             "current": "PO-1002",
             "action": "process_po_1002"
           }
         }
       ],
       "expected_routing": {
-        "agents": ["ContextManagerAgent", "ProcurementStatusAgent"],
+        "agents": [
+          "ContextManagerAgent",
+          "ProcurementStatusAgent"
+        ],
         "pattern": "sequential",
         "notes": "Must track the three-PO list from turn 1. On turn 2, mark PO-1001 complete and process PO-1002. PO-1003 must remain in the queue."
       },
@@ -688,7 +1003,23 @@
         "list_state_maintained": 60,
         "correct_current_action": 40
       },
-      "tags": ["multi-turn", "partial-completion", "procurement", "po", "stateful"]
+      "tags": [
+        "multi-turn",
+        "partial-completion",
+        "procurement",
+        "po",
+        "stateful"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.turn_count",
+          "orchestration.context_retained",
+          "orchestration.context_field_delta"
+        ]
+      },
+      "latency_budget_ms": 3000
     }
   ]
 }

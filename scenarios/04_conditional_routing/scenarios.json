@@ -12,11 +12,17 @@
       "prompt": "Approve the $15,000 expense if it's within the approval limit.",
       "turns": null,
       "expected_routing": {
-        "agents": ["PolicyCheckAgent", "ExpenseApprovalAgent OR FinanceEscalationAgent"],
+        "agents": [
+          "PolicyCheckAgent",
+          "ExpenseApprovalAgent OR FinanceEscalationAgent"
+        ],
         "pattern": "conditional",
-        "notes": "Must check policy threshold (typically $10k for auto-approve, >$10k escalates). $15k exceeds standard limit → escalate to finance manager."
+        "notes": "Must check policy threshold (typically $10k for auto-approve, >$10k escalates). $15k exceeds standard limit \u2192 escalate to finance manager."
       },
-      "expected_clarification": ["Expense category", "Cost center"],
+      "expected_clarification": [
+        "Expense category",
+        "Cost center"
+      ],
       "failure_modes": [
         "Auto-approves without checking the limit",
         "Escalates without explaining that the limit was exceeded",
@@ -27,7 +33,29 @@
         "condition_evaluated": 60,
         "correct_branch": 40
       },
-      "tags": ["conditional", "finance", "expense", "threshold", "approval", "P1"]
+      "tags": [
+        "conditional",
+        "finance",
+        "expense",
+        "threshold",
+        "approval",
+        "P1"
+      ],
+      "severity": "critical",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.condition_evaluated",
+          "orchestration.routing_branch",
+          "orchestration.branch_condition"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HITL",
+        "trigger": "spend_limit_exceeded",
+        "reason": "Expense exceeds auto-approval threshold \u2014 requires finance manager sign-off."
+      },
+      "latency_budget_ms": 1500
     },
     {
       "id": "CND-002",
@@ -38,11 +66,18 @@
       "prompt": "Ship the order if inventory is above 50 units AND the vendor rating is above 4.0.",
       "turns": null,
       "expected_routing": {
-        "agents": ["InventoryCheckAgent", "VendorRatingAgent", "ShipmentAgent OR HoldAgent"],
+        "agents": [
+          "InventoryCheckAgent",
+          "VendorRatingAgent",
+          "ShipmentAgent OR HoldAgent"
+        ],
         "pattern": "conditional",
         "notes": "Both conditions must be true for ShipmentAgent. If either fails, route to HoldAgent. Must not short-circuit on first passing condition."
       },
-      "expected_clarification": ["Product/SKU", "Vendor ID or name"],
+      "expected_clarification": [
+        "Product/SKU",
+        "Vendor ID or name"
+      ],
       "failure_modes": [
         "Ships if only inventory condition passes (ignores vendor rating)",
         "Ships if only vendor rating passes (ignores inventory)",
@@ -53,7 +88,24 @@
         "both_conditions_checked": 50,
         "and_logic_correct": 50
       },
-      "tags": ["conditional", "boolean-logic", "procurement", "inventory", "vendor", "P1"]
+      "tags": [
+        "conditional",
+        "boolean-logic",
+        "procurement",
+        "inventory",
+        "vendor",
+        "P1"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.condition_evaluated",
+          "orchestration.routing_branch",
+          "orchestration.branch_condition"
+        ]
+      },
+      "latency_budget_ms": 1500
     },
     {
       "id": "CND-003",
@@ -64,11 +116,17 @@
       "prompt": "If my expense is below 50 euros, approve it automatically; otherwise ask finance.",
       "turns": null,
       "expected_routing": {
-        "agents": ["PolicyCheckAgent", "AutoApprovalAgent OR FinanceReviewAgent"],
+        "agents": [
+          "PolicyCheckAgent",
+          "AutoApprovalAgent OR FinanceReviewAgent"
+        ],
         "pattern": "conditional",
-        "notes": "Threshold is €50. Below: auto-approve. At or above: escalate to finance team for review."
+        "notes": "Threshold is \u20ac50. Below: auto-approve. At or above: escalate to finance team for review."
       },
-      "expected_clarification": ["Expense amount", "Expense category"],
+      "expected_clarification": [
+        "Expense amount",
+        "Expense category"
+      ],
       "failure_modes": [
         "Always escalates regardless of amount",
         "Always auto-approves regardless of amount",
@@ -79,22 +137,44 @@
         "condition_evaluated": 60,
         "correct_branch": 40
       },
-      "tags": ["conditional", "finance", "expense", "threshold", "auto-approve"]
+      "tags": [
+        "conditional",
+        "finance",
+        "expense",
+        "threshold",
+        "auto-approve"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.condition_evaluated",
+          "orchestration.routing_branch",
+          "orchestration.branch_condition"
+        ]
+      },
+      "latency_budget_ms": 1500
     },
     {
       "id": "CND-004",
       "category": "conditional_routing",
-      "subcategory": "policy_branching",
+      "subcategory": "boolean_logic",
       "domain": "general",
       "title": "Rebook meeting if calendar conflict detected",
       "prompt": "If the meeting conflicts with my calendar, find the next available slot.",
       "turns": null,
       "expected_routing": {
-        "agents": ["CalendarCheckAgent", "MeetingBookingAgent OR SlotFinderAgent"],
+        "agents": [
+          "CalendarCheckAgent",
+          "MeetingBookingAgent OR SlotFinderAgent"
+        ],
         "pattern": "conditional",
         "notes": "Check calendar first. If conflict: find next available slot. If no conflict: book as requested."
       },
-      "expected_clarification": ["Meeting details (time, attendees, duration)", "Employee calendar ID"],
+      "expected_clarification": [
+        "Meeting details (time, attendees, duration)",
+        "Employee calendar ID"
+      ],
       "failure_modes": [
         "Books the requested slot without checking for conflicts",
         "Finds an alternative slot even when no conflict exists",
@@ -105,7 +185,22 @@
         "conflict_check_performed": 50,
         "correct_branch": 50
       },
-      "tags": ["conditional", "calendar", "scheduling", "general"]
+      "tags": [
+        "conditional",
+        "calendar",
+        "scheduling",
+        "general"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.condition_evaluated",
+          "orchestration.routing_branch",
+          "orchestration.branch_condition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "CND-005",
@@ -116,11 +211,16 @@
       "prompt": "If the product is out of stock, suggest an alternative with similar specs.",
       "turns": null,
       "expected_routing": {
-        "agents": ["InventoryCheckAgent", "OrderProcessingAgent OR ProductAlternativeAgent"],
+        "agents": [
+          "InventoryCheckAgent",
+          "OrderProcessingAgent OR ProductAlternativeAgent"
+        ],
         "pattern": "conditional",
         "notes": "Check stock. If available: route to OrderProcessing. If out of stock: route to ProductAlternative with spec context."
       },
-      "expected_clarification": ["Product SKU or name"],
+      "expected_clarification": [
+        "Product SKU or name"
+      ],
       "failure_modes": [
         "Processes order for out-of-stock item",
         "Suggests alternative without checking availability first",
@@ -131,7 +231,22 @@
         "stock_check_performed": 50,
         "correct_branch": 50
       },
-      "tags": ["conditional", "inventory", "customer-service", "alternative"]
+      "tags": [
+        "conditional",
+        "inventory",
+        "customer-service",
+        "alternative"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.condition_evaluated",
+          "orchestration.routing_branch",
+          "orchestration.branch_condition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "CND-006",
@@ -142,11 +257,18 @@
       "prompt": "If my return window has expired, check whether a goodwill exception is possible.",
       "turns": null,
       "expected_routing": {
-        "agents": ["ReturnPolicyAgent", "GoodwillExceptionAgent OR DeclineAgent"],
+        "agents": [
+          "ReturnPolicyAgent",
+          "GoodwillExceptionAgent OR DeclineAgent"
+        ],
         "pattern": "conditional",
         "notes": "Check return window first. If within window: standard return. If expired: evaluate goodwill exception eligibility."
       },
-      "expected_clarification": ["Order number", "Item condition", "Reason for return"],
+      "expected_clarification": [
+        "Order number",
+        "Item condition",
+        "Reason for return"
+      ],
       "failure_modes": [
         "Auto-declines without checking goodwill eligibility",
         "Grants goodwill exception without checking customer history or order details",
@@ -157,7 +279,23 @@
         "policy_check_performed": 50,
         "correct_branch": 50
       },
-      "tags": ["conditional", "returns", "customer-service", "goodwill", "policy"]
+      "tags": [
+        "conditional",
+        "returns",
+        "customer-service",
+        "goodwill",
+        "policy"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.condition_evaluated",
+          "orchestration.routing_branch",
+          "orchestration.branch_condition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "CND-007",
@@ -168,11 +306,16 @@
       "prompt": "If the customer is angry, escalate before replying.",
       "turns": null,
       "expected_routing": {
-        "agents": ["SentimentAnalysisAgent", "EscalationAgent OR ResponseAgent"],
+        "agents": [
+          "SentimentAnalysisAgent",
+          "EscalationAgent OR ResponseAgent"
+        ],
         "pattern": "conditional",
         "notes": "Must assess sentiment first. Negative/angry: escalate to human agent or senior support before any automated response. Neutral/positive: proceed with automated response."
       },
-      "expected_clarification": ["Customer message or conversation transcript"],
+      "expected_clarification": [
+        "Customer message or conversation transcript"
+      ],
       "failure_modes": [
         "Sends automated response to angry customer before escalating",
         "Escalates all customers regardless of sentiment",
@@ -183,7 +326,28 @@
         "sentiment_evaluated": 50,
         "correct_branch": 50
       },
-      "tags": ["conditional", "customer-service", "sentiment", "escalation", "NLP"]
+      "tags": [
+        "conditional",
+        "customer-service",
+        "sentiment",
+        "escalation",
+        "NLP"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.condition_evaluated",
+          "orchestration.routing_branch",
+          "orchestration.branch_condition"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HOTL",
+        "trigger": "negative_sentiment_detected",
+        "reason": "Angry customer \u2014 human agent has window to intercept before any automated response is delivered."
+      },
+      "latency_budget_ms": 800
     },
     {
       "id": "CND-008",
@@ -194,11 +358,17 @@
       "prompt": "If the policy allows it, proceed; if not, explain the restriction.",
       "turns": null,
       "expected_routing": {
-        "agents": ["PolicyCheckAgent", "ActionExecutionAgent OR PolicyExplanationAgent"],
+        "agents": [
+          "PolicyCheckAgent",
+          "ActionExecutionAgent OR PolicyExplanationAgent"
+        ],
         "pattern": "conditional",
         "notes": "Must query policy first. If allowed: execute action. If not: provide clear explanation citing policy rule."
       },
-      "expected_clarification": ["Action being requested", "User role and jurisdiction"],
+      "expected_clarification": [
+        "Action being requested",
+        "User role and jurisdiction"
+      ],
       "failure_modes": [
         "Executes action without policy check",
         "Blocks action without explaining why",
@@ -210,7 +380,22 @@
         "correct_branch": 30,
         "explanation_quality": 20
       },
-      "tags": ["conditional", "policy", "compliance", "general"]
+      "tags": [
+        "conditional",
+        "policy",
+        "compliance",
+        "general"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.condition_evaluated",
+          "orchestration.routing_branch",
+          "orchestration.branch_condition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "CND-009",
@@ -221,11 +406,18 @@
       "prompt": "If the invoice total changed, recalculate the tax and resend it.",
       "turns": null,
       "expected_routing": {
-        "agents": ["InvoiceComparisonAgent", "TaxCalculationAgent", "InvoiceSendAgent"],
+        "agents": [
+          "InvoiceComparisonAgent",
+          "TaxCalculationAgent",
+          "InvoiceSendAgent"
+        ],
         "pattern": "conditional",
-        "notes": "Compare current vs. previous invoice total. If changed: recalculate tax → resend. If unchanged: no action needed."
+        "notes": "Compare current vs. previous invoice total. If changed: recalculate tax \u2192 resend. If unchanged: no action needed."
       },
-      "expected_clarification": ["Invoice number", "Previous invoice version or amount"],
+      "expected_clarification": [
+        "Invoice number",
+        "Previous invoice version or amount"
+      ],
       "failure_modes": [
         "Resends invoice without recalculating tax",
         "Recalculates tax even when total is unchanged",
@@ -237,22 +429,44 @@
         "tax_recalculated": 30,
         "conditional_send": 30
       },
-      "tags": ["conditional", "finance", "invoice", "tax", "threshold"]
+      "tags": [
+        "conditional",
+        "finance",
+        "invoice",
+        "tax",
+        "threshold"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "orchestration.condition_evaluated",
+          "orchestration.routing_branch",
+          "orchestration.branch_condition"
+        ]
+      },
+      "latency_budget_ms": 2000
     },
     {
       "id": "CND-010",
       "category": "conditional_routing",
-      "subcategory": "policy_branching",
+      "subcategory": "boolean_logic",
       "domain": "it",
       "title": "Route to specialist if first-line agent cannot resolve",
       "prompt": "If the first agent cannot solve it, route to the specialist team.",
       "turns": null,
       "expected_routing": {
-        "agents": ["L1SupportAgent", "SpecialistTeamAgent"],
+        "agents": [
+          "L1SupportAgent",
+          "SpecialistTeamAgent"
+        ],
         "pattern": "conditional",
         "notes": "L1 attempts resolution. If resolution confidence below threshold or explicit failure signal: route to specialist with full context."
       },
-      "expected_clarification": ["Issue description", "System affected"],
+      "expected_clarification": [
+        "Issue description",
+        "System affected"
+      ],
       "failure_modes": [
         "Immediately routes to specialist without L1 attempt",
         "L1 fails but does not trigger specialist routing",
@@ -264,7 +478,23 @@
         "conditional_escalation": 40,
         "context_passed": 20
       },
-      "tags": ["conditional", "it", "escalation", "support", "tiered-routing"]
+      "tags": [
+        "conditional",
+        "it",
+        "escalation",
+        "support",
+        "tiered-routing"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 3,
+        "key_attributes": [
+          "orchestration.condition_evaluated",
+          "orchestration.routing_branch",
+          "orchestration.branch_condition"
+        ]
+      },
+      "latency_budget_ms": 2000
     }
   ]
 }

@@ -7,8 +7,8 @@ on:
         description: "Categories to run (space-separated, or 'all')"
         default: "all"
       fail_threshold:
-        description: "Minimum passing score (default: 850)"
-        default: "850"
+        description: "Minimum passing score (default: 935, matches Production Ready threshold on 1100-point scale)"
+        default: "935"
 
 jobs:
   orch-eval:
@@ -51,7 +51,7 @@ jobs:
           score = result['total_score']
           threshold = ${{ github.event.inputs.fail_threshold }}
           tier = result['tier']
-          print(f'Score: {score}/1000 — {tier}')
+          print(f'Score: {score}/1100 — {tier}')
           if score < threshold:
               print(f'FAIL: score {score} below threshold {threshold}')
               sys.exit(1)

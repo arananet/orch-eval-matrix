@@ -12,14 +12,18 @@
       "prompt": "Check the status of PO-7890 and then notify the vendor with the result.",
       "turns": null,
       "expected_routing": {
-        "agents": ["SAPQueryTool", "VendorPortalTool", "EmailNotificationTool"],
+        "agents": [
+          "SAPQueryTool",
+          "VendorPortalTool",
+          "EmailNotificationTool"
+        ],
         "pattern": "chain",
-        "notes": "Chain: SAP → Vendor Portal (to get vendor contact) → Email (with PO status from SAP). Each tool output feeds the next. Email must contain actual PO status, not a placeholder."
+        "notes": "Chain: SAP \u2192 Vendor Portal (to get vendor contact) \u2192 Email (with PO status from SAP). Each tool output feeds the next. Email must contain actual PO status, not a placeholder."
       },
       "expected_clarification": [],
       "failure_modes": [
         "Notifies vendor with empty or generic message instead of actual PO status",
-        "Skips vendor portal lookup — sends to wrong contact",
+        "Skips vendor portal lookup \u2014 sends to wrong contact",
         "Sends email before PO status is retrieved"
       ],
       "enterprise_impact": "Vendor confusion from incorrect status notification; damaged supplier relationship.",
@@ -27,11 +31,24 @@
         "tool1_to_tool2_context": 50,
         "tool2_to_tool3_context": 50
       },
-      "tags": ["tool-chaining", "procurement", "sap", "vendor", "email", "sequential"],
+      "tags": [
+        "tool-chaining",
+        "procurement",
+        "sap",
+        "vendor",
+        "email",
+        "sequential"
+      ],
       "observability_hints": {
         "expected_spans": 4,
-        "key_attributes": ["tool.chain_length", "tool.context_passed", "orchestration.routing_pattern"]
-      }
+        "key_attributes": [
+          "tool.chain_length",
+          "tool.context_passed",
+          "orchestration.routing_pattern"
+        ]
+      },
+      "severity": "medium",
+      "latency_budget_ms": 5000
     },
     {
       "id": "TLC-002",
@@ -42,11 +59,18 @@
       "prompt": "Process invoice INV-2024-0456, post the GL entry, and create the month-end accrual.",
       "turns": null,
       "expected_routing": {
-        "agents": ["InvoiceProcessingTool", "GeneralLedgerTool", "AccrualTool"],
+        "agents": [
+          "InvoiceProcessingTool",
+          "GeneralLedgerTool",
+          "AccrualTool"
+        ],
         "pattern": "chain",
-        "notes": "Chain: Invoice Processing (validates invoice, returns GL data) → GL Posting (uses invoice GL codes) → Accrual Creation (uses GL posting reference). Each step must complete before the next."
+        "notes": "Chain: Invoice Processing (validates invoice, returns GL data) \u2192 GL Posting (uses invoice GL codes) \u2192 Accrual Creation (uses GL posting reference). Each step must complete before the next."
       },
-      "expected_clarification": ["GL period (which accounting month)", "Cost center from invoice"],
+      "expected_clarification": [
+        "GL period (which accounting month)",
+        "Cost center from invoice"
+      ],
       "failure_modes": [
         "Posts GL without waiting for invoice validation",
         "Creates accrual without GL posting reference",
@@ -58,7 +82,26 @@
         "gl_to_accrual_context": 40,
         "sequential_order": 20
       },
-      "tags": ["tool-chaining", "finance", "invoice", "gl", "accrual", "sequential", "P1"]
+      "tags": [
+        "tool-chaining",
+        "finance",
+        "invoice",
+        "gl",
+        "accrual",
+        "sequential",
+        "P1"
+      ],
+      "severity": "critical",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "tool.chain_length",
+          "tool.context_passed",
+          "tool.context_loss_detected",
+          "orchestration.routing_pattern"
+        ]
+      },
+      "latency_budget_ms": 6000
     },
     {
       "id": "TLC-003",
@@ -69,9 +112,13 @@
       "prompt": "Line 4 at Plant 2 is down. Check material availability and dispatch maintenance.",
       "turns": null,
       "expected_routing": {
-        "agents": ["LineStatusTool", "InventoryCheckTool", "MaintenanceDispatchTool"],
+        "agents": [
+          "LineStatusTool",
+          "InventoryCheckTool",
+          "MaintenanceDispatchTool"
+        ],
         "pattern": "chain",
-        "notes": "Chain: Line Status (confirms down state, identifies failure type) → Inventory Check (checks materials needed for repair identified in step 1) → Maintenance Dispatch (with failure type + materials context)."
+        "notes": "Chain: Line Status (confirms down state, identifies failure type) \u2192 Inventory Check (checks materials needed for repair identified in step 1) \u2192 Maintenance Dispatch (with failure type + materials context)."
       },
       "expected_clarification": [],
       "failure_modes": [
@@ -85,7 +132,25 @@
         "material_context_carried": 30,
         "correct_dispatch": 30
       },
-      "tags": ["tool-chaining", "manufacturing", "line-down", "maintenance", "inventory", "chain"]
+      "tags": [
+        "tool-chaining",
+        "manufacturing",
+        "line-down",
+        "maintenance",
+        "inventory",
+        "chain"
+      ],
+      "severity": "medium",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "tool.chain_length",
+          "tool.context_passed",
+          "tool.context_loss_detected",
+          "orchestration.routing_pattern"
+        ]
+      },
+      "latency_budget_ms": 5000
     },
     {
       "id": "TLC-004",
@@ -96,14 +161,21 @@
       "prompt": "Update incident INC-8821, analyze root cause, and notify all affected stakeholders.",
       "turns": null,
       "expected_routing": {
-        "agents": ["IncidentManagementTool", "RootCauseAnalysisTool", "StakeholderNotificationTool"],
+        "agents": [
+          "IncidentManagementTool",
+          "RootCauseAnalysisTool",
+          "StakeholderNotificationTool"
+        ],
         "pattern": "chain",
-        "notes": "Chain: Incident Tool (fetches incident details, updates status) → RCA Tool (uses incident details to perform analysis) → Notification Tool (sends to stakeholders from incident record with RCA summary)."
+        "notes": "Chain: Incident Tool (fetches incident details, updates status) \u2192 RCA Tool (uses incident details to perform analysis) \u2192 Notification Tool (sends to stakeholders from incident record with RCA summary)."
       },
-      "expected_clarification": ["Update type (status change, workaround, resolution)", "Target stakeholders or auto-detect from incident record"],
+      "expected_clarification": [
+        "Update type (status change, workaround, resolution)",
+        "Target stakeholders or auto-detect from incident record"
+      ],
       "failure_modes": [
         "Notifies stakeholders before RCA is complete",
-        "RCA performed without incident details — generic analysis",
+        "RCA performed without incident details \u2014 generic analysis",
         "Stakeholder list not pulled from incident record"
       ],
       "enterprise_impact": "Premature notification with incomplete information; customer trust loss.",
@@ -112,7 +184,31 @@
         "rca_to_notification_context": 40,
         "stakeholders_correct": 20
       },
-      "tags": ["tool-chaining", "it", "incident", "rca", "notification", "sequential", "P1"]
+      "tags": [
+        "tool-chaining",
+        "it",
+        "incident",
+        "rca",
+        "notification",
+        "sequential",
+        "P1"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "tool.chain_length",
+          "tool.context_passed",
+          "tool.context_loss_detected",
+          "orchestration.routing_pattern"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HOTL",
+        "trigger": "stakeholder_notification",
+        "reason": "Stakeholder notification after incident \u2014 comms team has oversight window before send."
+      },
+      "latency_budget_ms": 5000
     },
     {
       "id": "TLC-005",
@@ -123,11 +219,19 @@
       "prompt": "Get budget approval for $45,000, create the purchase order, and confirm with the vendor.",
       "turns": null,
       "expected_routing": {
-        "agents": ["BudgetApprovalTool", "POCreationTool", "VendorConfirmationTool"],
+        "agents": [
+          "BudgetApprovalTool",
+          "POCreationTool",
+          "VendorConfirmationTool"
+        ],
         "pattern": "chain",
-        "notes": "Chain: Budget Approval (returns approval reference) → PO Creation (embeds approval reference in PO) → Vendor Confirmation (sends PO number from step 2 to vendor). Must not skip budget approval step."
+        "notes": "Chain: Budget Approval (returns approval reference) \u2192 PO Creation (embeds approval reference in PO) \u2192 Vendor Confirmation (sends PO number from step 2 to vendor). Must not skip budget approval step."
       },
-      "expected_clarification": ["Cost center", "Vendor ID", "Item specification"],
+      "expected_clarification": [
+        "Cost center",
+        "Vendor ID",
+        "Item specification"
+      ],
       "failure_modes": [
         "Creates PO before budget approval is obtained",
         "PO created without embedding budget approval reference",
@@ -139,7 +243,31 @@
         "approval_ref_in_po": 30,
         "po_number_to_vendor": 30
       },
-      "tags": ["tool-chaining", "procurement", "budget", "po", "vendor", "chain", "P1"]
+      "tags": [
+        "tool-chaining",
+        "procurement",
+        "budget",
+        "po",
+        "vendor",
+        "chain",
+        "P1"
+      ],
+      "severity": "high",
+      "observability_hints": {
+        "expected_spans": 4,
+        "key_attributes": [
+          "tool.chain_length",
+          "tool.context_passed",
+          "tool.context_loss_detected",
+          "orchestration.routing_pattern"
+        ]
+      },
+      "hitl_hotl": {
+        "mode": "HITL",
+        "trigger": "large_spend_approval",
+        "reason": "$45k purchase requires formal budget approval before PO creation."
+      },
+      "latency_budget_ms": 5000
     }
   ]
 }
