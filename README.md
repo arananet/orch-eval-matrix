@@ -12,18 +12,29 @@
 
 ## The Purpose of an Orchestrator
 
-> **Divide the problem into smaller pieces → locate the right agent per domain → manage context precisely → use frontier models only when necessary, delegating the rest to SLMs.**
+> **Divide the problem into smaller pieces → locate the right agent per domain → manage context precisely → reduce frontier model usage to only what demands it, delegating domain execution to purpose-built agents.**
 
 An orchestrator's job is not to answer questions. It is to:
 
 1. **Decompose** — break a complex user request into the smallest independently solvable sub-problems
-2. **Route** — direct each sub-problem to the agent or model with the right domain expertise
+2. **Route** — direct each sub-problem to the agent with the right domain expertise
 3. **Manage context** — carry exactly the right information between steps, no more, no less
-4. **Minimize frontier model usage** — reserve expensive large models for strategic reasoning and conflict resolution; let small language models (SLMs) handle routine domain execution
+4. **Delegate** — the cost efficiency is a consequence of correct routing, not the goal; the goal is that the right agent handles each problem
 
-When orchestration is done correctly, frontier model calls drop to a fraction of the total compute. Most of the work — the domain lookups, policy checks, data retrieval, routine approvals — is handled by cheaper, faster, purpose-built SLMs. The orchestrator is the intelligence that makes this cost-efficient delegation possible without sacrificing correctness.
+**The complexity is in the orchestration and routing itself.** Deciding which agent owns which sub-problem, preserving the right context across steps, detecting when clarification is needed before acting, resolving conflicts between competing constraints, recovering from partial failures — this is where systems break in production. A system that routes everything to a single agent is not an orchestrator; it is a useless wrapper regardless of which model sits behind it.
 
-**This matrix evaluates whether your orchestrator actually does this.** A system that routes everything to a single frontier model is not an orchestrator — it is an expensive wrapper. The scenarios in this matrix are designed to expose exactly that failure mode.
+This matrix does not measure whether an SLM performs better than a frontier model. It measures whether the **routing and orchestration decisions** are correct: did the right agent get called, with the right context, in the right order, with the right fallback when something went wrong.
+
+### Human Oversight as a First-Class Concern
+
+No orchestration system is complete without a clearly defined human oversight layer. This matrix evaluates two distinct patterns:
+
+| Pattern | Definition | When Required |
+|---|---|---|
+| **Human-in-the-Loop (HITL)** | Orchestrator **pauses and waits** for explicit human approval before proceeding. The workflow cannot continue without it. | High-stakes irreversible actions: financial approvals, compliance sign-offs, legal reviews, safety-critical operations |
+| **Human-on-the-Loop (HOTL)** | Orchestrator proceeds autonomously but **notifies a human** who can intervene within a defined window. Execution continues if no intervention occurs. | Routine but monitored actions: standard purchase orders, leave approvals within policy, automated incident responses |
+
+The CNF-* and CND-* scenarios specifically test whether the orchestrator correctly identifies which actions require HITL (hard stop) vs HOTL (proceed with oversight) vs full autonomy. Misclassifying a HITL action as autonomous is a critical failure regardless of the routing decision's correctness.
 
 ---
 
@@ -251,7 +262,8 @@ This matrix is framework-agnostic. It has been designed with the following patte
 | **LLM-as-Router** | A dedicated LLM call classifies intent and emits a structured routing decision (agent name + parameters). Replaces hard-coded rule trees. Standard in enterprise platforms as of 2025. | INT-* (LLM router accuracy), CND-* (LLM conditional gate accuracy) |
 | **Persistent Agent Memory** | Agents maintain long-term memory across sessions (MemGPT-style, Zep, Mem0). Orchestrator injects relevant memories into agent context at session start. Critical for enterprise workflows spanning multiple days. | MTX-013..015 (cross-session context, escalation chains, partial completion) |
 | **Agentic RAG Orchestration** | Retrieval is an agent, not a static pipeline step. Orchestrator routes queries to a Retrieval Agent that selects the knowledge source dynamically; output feeds generation agents with source attribution. | CLR-* (retrieve before acting), TLC-* (retrieval → reasoning → generation chain) |
-| **Human-in-the-Loop (HITL) Gating** | Orchestrator pauses at defined checkpoints for human approval before proceeding. Standard for finance approvals, compliance actions, legal reviews. Implemented as interrupt nodes (LangGraph) or workflow approval steps. | CNF-001, CNF-002 (HITL escalation), CND-001 (approval gate), TLC-005 (budget approval in chain) |
+| **Human-in-the-Loop (HITL)** | Orchestrator pauses and waits for explicit human approval before proceeding. Hard stop — workflow cannot continue without it. Standard for high-stakes irreversible actions: financial approvals, compliance sign-offs, safety-critical operations. | CNF-001, CNF-002 (hard-stop escalation), CND-001 (approval gate), TLC-005 (budget approval before PO) |
+| **Human-on-the-Loop (HOTL)** | Orchestrator proceeds autonomously but notifies a human who can intervene within a defined window. Execution continues if no intervention occurs. The orchestrator must correctly classify which actions qualify. | CNF-003, CNF-007 (proceed with oversight), CND-003 (auto-approve with notification) |
 | **Multi-Tenant Orchestration** | Single orchestrator serves multiple business units with isolated context, routing rules, and tool access permissions. Policy engine enforces BU-level data isolation at the orchestration layer. | CLR-008 (BU-scoped escalation), CNF-005 (regional vs. global policy), CND-006 (regulatory routing) |
 | **Strategic Core + Specialist Arms** | Central LLM reserved for strategic decisions and conflict resolution; domain-specific smaller models handle routine execution (logistics, finance, legal). Avoids "Central Brain Syndrome" where one model owns all decisions. Pioneered in [octo-agent](https://github.com/arananet/octo-agent). | CNF-* (strategic core arbitration), INT-* (delegation to specialist arms), TLC-* (arm coordination chains) |
 
@@ -277,7 +289,7 @@ See `.claude/skills/orch-eval.md` for the full skill workflow.
 
 ---
 
-## Observability Integration
+## Observability & Feedback
 
 Every scenario includes `observability_hints` with recommended OpenTelemetry span attributes. Supported platforms:
 
@@ -288,7 +300,31 @@ Every scenario includes `observability_hints` with recommended OpenTelemetry spa
 | **OpenTelemetry** | Generic OTLP export to any collector (Jaeger, Tempo, Honeycomb, Grafana) |
 | **CI/CD** | GitHub Actions workflow to gate deployments on eval score |
 
-See `observability/integration_guide.md` for complete setup instructions.
+### The Two-Layer Feedback Problem
+
+Observability in orchestration systems must answer two fundamentally different questions, and **conflating them is a common mistake**:
+
+```
+Layer 1 — Orchestrator evaluation
+  "Did the orchestrator send the request to the right agent?"
+  Measured by: routing decision accuracy, clarification trigger rate,
+               context completeness passed to agent, HITL/HOTL classification
+
+Layer 2 — Agent evaluation
+  "Did the agent give the right response to the user's prompt?"
+  Measured by: response correctness, hallucination rate, tool call accuracy,
+               answer quality relative to the domain task
+```
+
+**This matrix evaluates Layer 1 exclusively.** It tests the orchestration and routing decisions — not the quality of what the downstream agent produces. A correct routing decision to an agent that gives a wrong answer is a passing orchestrator score and a failing agent score. These are different problems that require separate evaluation pipelines.
+
+When setting up observability, structure your traces to separate these layers:
+- Orchestrator spans: `orch.intent_count`, `orch.routing_decision`, `orch.clarification_required`, `orch.hitl_triggered`, `orch.context_passed`
+- Agent spans: `agent.response_quality`, `agent.tool_calls`, `agent.latency`, `agent.domain`
+
+Feedback loops should feed back to the correct layer: agent response quality feedback improves the agent; routing decision feedback improves the orchestrator. Mixing them corrupts both improvement signals.
+
+See `observability/integration_guide.md` for complete platform setup.
 
 ---
 
@@ -325,7 +361,7 @@ Scenario schema fields:
 
 **Decomposition-first evaluation.** Every INT-* scenario tests whether the orchestrator breaks a complex prompt into the right sub-problems before routing. A system that sends the full prompt to one agent fails these scenarios — even if it gets the right answer.
 
-**Domain routing accuracy.** Each scenario has an expected domain agent. Routing a finance problem to a general-purpose LLM when a Finance Agent exists is a failure, not a partial credit. The rubric penalises over-reliance on frontier models for tasks that belong to a domain SLM.
+**Domain routing accuracy.** Each scenario has an expected domain agent. Routing a finance problem to a general-purpose agent when a Finance Agent exists is a failure, not a partial credit. The complexity being evaluated is the routing decision — not the quality of the agent's downstream response.
 
 **Context efficiency.** The MTX-* scenarios test not just whether context is *retained*, but whether the orchestrator carries it efficiently — passing the minimum necessary state to each downstream agent rather than replaying the full conversation history.
 
